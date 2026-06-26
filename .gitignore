@@ -1,0 +1,23 @@
+# Bytecode / caches
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.pytest_cache/
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# Environment
+.env
+
+# SQLite database (local dev / sandbox data)
+*.db
+*.db-journal
+
+# Editor / OS
+*.swp
+.DS_Store
+.idea/
+.vscode/

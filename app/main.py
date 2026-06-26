@@ -22,18 +22,22 @@ load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Query
 
-from . import mcp_tools
+from . import mcp_tools, survey
 from .db import init_db
 from .models import (
     CardsResponse,
     ConnectRequest,
     ConnectResponse,
     HealthResponse,
+    MatchCard,
     MatchRecord,
     MatchesResponse,
     Profile,
     SwipeRequest,
     SwipeResponse,
+    SurveyAnswerRequest,
+    SurveyAnswerResponse,
+    SurveyStateResponse,
     UpdateProfileRequest,
     UpdateProfileResponse,
 )
@@ -85,11 +89,14 @@ def health() -> HealthResponse:
 
 @app.post("/connect", response_model=ConnectResponse)
 def connect(req: ConnectRequest) -> ConnectResponse:
-    result = mcp_tools.connect_harness(req.harness_id)
+    # /connect kicks off the stateful Socratic onboarding survey: it creates
+    # the anonymous profile and returns the first question in one shot.
+    result = survey.start_survey(req.harness_id)
     return ConnectResponse(
         status=result["status"],
         profile=Profile(**result["profile"]),
         next=result["next"],
+        question=result.get("question"),
     )
 
 
@@ -152,3 +159,45 @@ def matches(
 ) -> MatchesResponse:
     result = mcp_tools.get_matches(harness_id)
     return MatchesResponse(matches=[MatchRecord(**m) for m in result["matches"]])
+
+
+# --- survey onboarding --------------------------------------------------------
+
+
+@app.post("/survey/start", response_model=ConnectResponse)
+def survey_start(req: ConnectRequest) -> ConnectResponse:
+    """(Re)start the onboarding survey for a harness, returning question 1."""
+    result = survey.start_survey(req.harness_id)
+    return ConnectResponse(
+        status=result["status"],
+        profile=Profile(**result["profile"]),
+        next=result["next"],
+        question=result.get("question"),
+    )
+
+
+@app.post("/survey/answer", response_model=SurveyAnswerResponse)
+def survey_answer(req: SurveyAnswerRequest) -> SurveyAnswerResponse:
+    result = survey.answer_survey(req.harness_id, req.answer)
+    return SurveyAnswerResponse(
+        status=result["status"],
+        harness_id=result.get("harness_id"),
+        answered=result.get("answered"),
+        saved=result.get("saved", {}),
+        next_question=result.get("next_question"),
+        done=result.get("done", False),
+        matches=[MatchCard(**m) for m in result.get("matches", [])],
+    )
+
+
+@app.get("/survey/state", response_model=SurveyStateResponse)
+def survey_state(
+    harness_id: str = Query(..., description="Harness checking its survey progress"),
+) -> SurveyStateResponse:
+    result = survey.survey_state(harness_id)
+    return SurveyStateResponse(
+        harness_id=result["harness_id"],
+        progress=result["progress"],
+        question=result.get("question"),
+        done=result["done"],
+    )

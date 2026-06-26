@@ -7,7 +7,7 @@ with no profile data still serializes cleanly.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -51,10 +51,20 @@ class Profile(ProfileBase):
     updated_at: Optional[str] = None
 
 
+class SurveyQuestion(BaseModel):
+    num: int
+    key: str
+    text: str
+    type: str
+    options: list[str] = Field(default_factory=list)
+    progress: str
+
+
 class ConnectResponse(BaseModel):
     status: str
     profile: Profile
     next: str
+    question: Optional[SurveyQuestion] = None
 
 
 class UpdateProfileResponse(BaseModel):
@@ -116,3 +126,29 @@ class HealthResponse(BaseModel):
     status: str
     service: str
     runtime: str
+
+
+# --- Survey onboarding --------------------------------------------------------
+
+
+class SurveyAnswerRequest(BaseModel):
+    harness_id: str = Field(..., description="Unique harness identifier")
+    answer: str = Field(..., description="Free-text answer to the current question")
+
+
+class SurveyAnswerResponse(BaseModel):
+    status: str
+    harness_id: Optional[str] = None
+    answered: Optional[int] = None
+    saved: dict[str, Any] = Field(default_factory=dict)
+    next_question: Optional[SurveyQuestion] = None
+    done: bool = False
+    # Populated with the top match cards once the survey is `done`.
+    matches: list[MatchCard] = Field(default_factory=list)
+
+
+class SurveyStateResponse(BaseModel):
+    harness_id: str
+    progress: str
+    question: Optional[SurveyQuestion] = None
+    done: bool

@@ -60,6 +60,7 @@ betterhackdays/
 │   ├── models.py        # Pydantic request/response models
 │   ├── seed.py          # Anonymous builder seed data
 │   ├── matchmaking.py   # Scoring heuristic, exclusions, match creation
+│   ├── survey.py        # Stateful Socratic onboarding survey (8 questions)
 │   └── mcp_tools.py     # MCP-friendly function layer (single source of truth)
 ├── client/             # terminal-side client (runs on each harness)
 │   ├── __init__.py      # derives harness_id from git email, calls backend
@@ -107,7 +108,10 @@ SEED_PROFILES=true .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 | Method | Path                       | Purpose                                            |
 |--------|----------------------------|----------------------------------------------------|
 | GET    | `/health`                  | Liveness / readiness probe                          |
-| POST   | `/connect`                 | Create or return an anonymous profile for a harness |
+| POST   | `/connect`                 | Create profile **and start the onboarding survey (returns Q1)** |
+| POST   | `/survey/start`            | (Re)start the survey for a harness, returns Q1      |
+| POST   | `/survey/answer`           | Record one answer, update profile, return next Q + matches on finish |
+| GET    | `/survey/state`            | Peek at current survey progress without advancing   |
 | POST   | `/profile/update`          | Upsert profile fields (skills, role, vibe, etc.)    |
 | GET    | `/matchmaking/cards`       | Anonymized, scored, sorted candidate cards          |
 | POST   | `/matchmaking/like`        | Like a candidate; mutual like → match               |
@@ -127,7 +131,66 @@ A simple, demo-friendly heuristic (no embeddings, no LLM):
 
 Each card includes a human-readable `match_reason`. Cards are sorted by
 `match_score` descending. The deck excludes self, already-liked, already-passed,
-and already-matched profiles.
+and already-matched profiles. The final `/survey/answer` (when `done=true`)
+also returns the top 5 match cards inline by calling this same engine, so the
+onboarding loop flows straight into matches without a separate call.
+
+## Socratic onboarding survey
+
+`/connect` no longer just hands back an empty profile — it kicks off a
+**stateful 8-question street survey** (the GitCommitted survey) that builds the
+profile progressively. Each `POST /survey/answer`:
+
+1. Records the answer
+2. Maps it onto profile fields (`skills`, `preferred_role`, `availability`,
+   `interests`, `project_vibe`, `looking_for`, `display_label`)
+3. Returns the next question and progress (`3/8`, etc.)
+
+The **last answer** sets `done: true` and attaches the top 5 match cards inline.
+Answering `No` to the screener (Q1) ends the survey early with `matches: []`.
+Survey state is held in memory keyed by `harness_id`, so a restarted backend
+resets in-progress sessions (profiles persist in SQLite).
+
+The 8 questions cover: screener → event attendance → hardest part of finding
+teamates → how you find collaborators today → appeal (1-5) → where you'd use it
+→ what builds trust → close + a name to call you.
+
+### Test the live service (1-day demo deployment)
+
+The backend is deployed in a Daytona Sandbox and kept alive for ~24h:
+
+```
+BASE=https://8000-839f8b4c-960f-4a90-9b60-a431090a7dc6.proxy.daytona.work
+```
+
+Run the full loop in one go — the harness id is derived automatically from
+your local `git config user.email` (SHA-256, never sent raw), so no login:
+
+```bash
+BASE="https://8000-839f8b4c-960f-4a90-9b60-a431090a7dc6.proxy.daytona.work"
+HID="harness_$(printf 'betterhackdays:%s' "$(git config --get user.email)" | shasum -a 256 | cut -c1-12)"
+
+curl -s "$BASE/health"   # -> {"status":"ok"}
+
+# 1) /connect -> creates profile, returns Q1
+curl -s -X POST "$BASE/connect" -H 'Content-Type: application/json' \
+  -d "{\"harness_id\":\"$HID\"}" | jq '.question'
+
+# 2) Answer Q1 (screener; infers skills + role)
+curl -s -X POST "$BASE/survey/answer" -H 'Content-Type: application/json' \
+  -d "{\"harness_id\":\"$HID\",\"answer\":\"Yes, regularly I code\"}" | jq '{saved, next_question: .next_question.num}'
+
+# 3-8) Repeat for each answer; the 8th returns done=true + matches inline
+for ans in "Yes, in the last 6 months" "Finding someone with the right skills" \
+           "Discord / Slack" "4" "Hackathons" \
+           "verified commits and mutual vibe match" "Yes, call me Zubin"; do
+  curl -s -X POST "$BASE/survey/answer" -H 'Content-Type: application/json' \
+    -d "{\"harness_id\":\"$HID\",\"answer\":\"$ans\"}" | jq '{done, progress: .next_question.progress, matches: (.matches|length)}'
+done
+
+# After the loop, pull the full live deck any time
+curl -s "$BASE/matchmaking/cards?harness_id=$HID" | jq '.cards[] | {display_label, match_score, match_reason}'
+```
 
 ## Terminal client (auto-identity via MCP)
 
@@ -165,15 +228,20 @@ like_profile("harness_backend_002")
 ## Example curl commands
 
 ```bash
-BASE=http://localhost:8000
+BASE=http://localhost:8000   # or the Daytona proxy URL above
 
 # Health
 curl "$BASE/health"
 
-# Connect a harness
+# Connect a harness (starts the survey, returns Q1)
 curl -X POST "$BASE/connect" \
   -H "Content-Type: application/json" \
   -d '{"harness_id":"warp_zubin_001"}'
+
+# Answer the next survey question (advances the loop)
+curl -X POST "$BASE/survey/answer" \
+  -H "Content-Type: application/json" \
+  -d '{"harness_id":"warp_zubin_001","answer":"Yes, regularly I code"}'
 
 # Update profile
 curl -X POST "$BASE/profile/update" \

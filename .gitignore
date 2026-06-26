@@ -9,8 +9,11 @@ __pycache__/
 venv/
 env/
 
-# Environment
+# Environment / secrets — never commit real env files
 .env
+.env.local
+.env.*
+!.env.example
 
 # SQLite database (local dev / sandbox data)
 *.db

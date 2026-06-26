@@ -49,19 +49,23 @@ No auth. No UI. No LLM matching. No Daytona SDK provisioning in this package.
 
 ## Project structure
 
-```
-BetterHackdays/
+betterhackdays/
 ├── README.md
 ├── requirements.txt
 ├── .env.example
-└── app/
-    ├── __init__.py
-    ├── main.py          # FastAPI routes (thin)
-    ├── db.py            # SQLite schema + connection helpers
-    ├── models.py        # Pydantic request/response models
-    ├── seed.py          # Anonymous builder seed data
-    ├── matchmaking.py   # Scoring heuristic, exclusions, match creation
-    └── mcp_tools.py     # MCP-friendly function layer (single source of truth)
+├── app/                # backend (runs inside Daytona Sandbox)
+│   ├── __init__.py
+│   ├── main.py          # FastAPI routes (thin)
+│   ├── db.py            # SQLite schema + connection helpers
+│   ├── models.py        # Pydantic request/response models
+│   ├── seed.py          # Anonymous builder seed data
+│   ├── matchmaking.py   # Scoring heuristic, exclusions, match creation
+│   └── mcp_tools.py     # MCP-friendly function layer (single source of truth)
+├── client/             # terminal-side client (runs on each harness)
+│   ├── __init__.py      # derives harness_id from git email, calls backend
+│   └── __main__.py      # CLI: `python -m client connect | cards | like ...`
+└── scripts/
+    └── deploy_ssh.sh    # one-shot deploy into a Daytona Sandbox via SSH
 ```
 
 ## How to run locally
@@ -124,6 +128,39 @@ A simple, demo-friendly heuristic (no embeddings, no LLM):
 Each card includes a human-readable `match_reason`. Cards are sorted by
 `match_score` descending. The deck excludes self, already-liked, already-passed,
 and already-matched profiles.
+
+## Terminal client (auto-identity via MCP)
+
+Every harness connects by **invoking MCP on the terminal side** — no manual
+`harness_id`, no login, no API key. The `client/` package derives a stable,
+anonymous `harness_id` automatically and forwards tool calls to the shared
+backend:
+
+1. Reads local `git config user.email`
+2. SHA-256 hashes it (with a salt) → `harness_<12hex>`
+3. Sends only that hash to `/connect` — the raw email never leaves your machine
+
+Override identity with `$BETTERHACKDAYS_HARNESS_ID` if you need a fixed id.
+
+```bash
+export BETTERHACKDAYS_BACKEND_URL=https://8000-<sandbox>.proxy.daytona.work
+
+python -m client whoami               # show derived harness_id
+python -m client connect              # auto-connect (no args)
+python -m client update display_label="AI builder" skills=FastAPI,AI -- preferred_role=product
+python -m client cards                # get match cards
+python -m client like harness_backend_002
+python -m client pass harness_frontend_001
+python -m client matches
+```
+
+The same functions are importable for a real MCP server:
+
+```python
+from client import connect, get_match_cards, like_profile, get_matches
+connect()                       # uses derived harness_id automatically
+like_profile("harness_backend_002")
+```
 
 ## Example curl commands
 

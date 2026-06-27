@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitCommitted · Street survey</title>
+<style>
+  :root {
+    --black: #0a0a0a;
+    --gray-900: #1a1a1a;
+    --gray-700: #3a3a3a;
+    --gray-500: #6b6b6b;
+    --gray-300: #b0b0b0;
+    --gray-100: #ececec;
+    --red: #e11d2e;
+    --red-bright: #ff2d3d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--black);
+    color: var(--gray-100);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    line-height: 1.5;
+    padding: 32px 20px 64px;
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  header {
+    border-bottom: 3px solid var(--red);
+    padding-bottom: 20px;
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span { color: var(--red-bright); }
+
+  .meta {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--gray-500);
+  }
+
+  .intro {
+    background: var(--gray-900);
+    border-left: 4px solid var(--red);
+    padding: 16px 20px;
+    margin-bottom: 32px;
+    font-size: 15px;
+    color: var(--gray-300);
+  }
+
+  .intro strong { color: #fff; }
+
+  section {
+    margin-bottom: 28px;
+    padding: 20px;
+    background: var(--gray-900);
+    border: 1px solid var(--gray-700);
+    border-radius: 10px;
+  }
+
+  .q-num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 6px;
+  }
+
+  .question {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .type {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin-bottom: 10px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 15px;
+    color: var(--gray-300);
+  }
+
+  .box {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--gray-500);
+    border-radius: 3px;
+    margin-top: 2px;
+  }
+
+  .circle {
+    border-radius: 50%;
+  }
+
+  .line {
+    flex: 1;
+    border-bottom: 1px dashed var(--gray-700);
+    min-height: 24px;
+    margin-top: 4px;
+  }
+
+  .script {
+    margin-top: 32px;
+    padding: 20px;
+    border: 1px dashed var(--gray-700);
+    border-radius: 10px;
+  }
+
+  .script h2 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--red-bright);
+  }
+
+  .script p {
+    font-size: 14px;
+    color: var(--gray-300);
+    margin-bottom: 10px;
+  }
+
+  @media print {
+    body { background: #fff; color: #111; padding: 0; }
+    section, .intro, .script { background: #f5f5f5; border-color: #ccc; }
+    .q-num, h1 span { color: #c00; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Git<span>Committed</span> street survey</h1>
+    <p class="meta">~3 min · Interviewer fills in · Target: builders, students, tech-curious strangers</p>
+  </header>
+
+  <div class="intro">
+    <strong>Opener:</strong> "Hi, we are testing a free app that helps coders and builders find teammates with a similar vibe at hackathons and events. Got 3 minutes? We will not ask for your email unless you want early access."
+  </div>
+
+  <section>
+    <p class="q-num">Q1 · Screener</p>
+    <p class="question">Do you write code, design products, or build things with tech (even as a hobby)?</p>
+    <p class="type">Single choice</p>
+    <div class="options">
+      <label class="opt"><span class="box circle"></span> Yes, regularly</label>
+      <label class="opt"><span class="box circle"></span> Sometimes / learning</label>
+      <label class="opt"><span class="box circle"></span> No → <em>Thank and end (optional: still ask Q8)</em></label>
+    </div>
+  </section>
+
+  <section>
+    <p class="q-num">Q2</p>
+    <p class="question">Have you ever gone to a hackathon, dev meetup, or builder event?</p>
+    <p class="type">Single choice</p>
+    <div class="options">
+      <label class="opt"><span class="box circle"></span> Yes, in the last 6 months</label>
+      <label class="opt"><span class="box circle"></span> Yes, but not recently</label>
+      <label class="opt"><span class="box circle"></span> Never, but I would try</label>
+      <label class="opt"><span class="box circle"></span> Never, not interested</label>
+    </div>
+  </section>
+
+  <section>
+    <p class="q-num">Q3 · Problem</p>
+    <p class="question">When you need a teammate or collaborator, what is hardest?</p>
+    <p class="type">Pick up to 2</p>
+    <div class="options">
+      <label class="opt"><span class="box"></span> Finding someone with the right skills</label>
+      <label class="opt"><span class="box"></span> Finding someone who matches how I work (pace, tools, vibe)</label>
+      <label class="opt"><span class="box"></span> Breaking the ice / approaching strangers</label>
+      <label class="opt"><span class="box"></span> Trusting they will actually show up and contribute</label>
+      <label class="opt"><span class="box"></span> Not a problem for me</label>
+    </div>
+  </section>
+
+  <section>
+    <p class="q-num">Q4</p>
+    <p class="question">How do you usually find people to build with today?</p>
+    <p class="type">Multiple choice</p>
+    <div class="options">
+      <label class="opt"><span class="box"></span> Friends / existing network</label>
+      <label class="opt"><span class="box"></span> Discord / Slack / online communities</label>
+      <label class="opt"><span class="box"></span> LinkedIn or job boards</label>
+      <label class="opt"><span class="box"></span> Random pairing at the event</label>
+      <label class="opt"><span class="box"></span> I usually work alone</label>
+    </div>
+  </section>
+
+  <section>
+    <p class="q-num">Q5 · Concept</p>
+    <p class="question">GitCommitted matches you to builders with similar stack, goals, and "vibe" before or during an event. How appealing is that?</p>
+    <p class="type">Scale 1–5 (1 = not at all, 5 = very)</p>
+    <div class="options" style="flex-direction: row; gap: 16px; flex-wrap: wrap;">
+      <label class="opt"><span class="box circle"></span> 1</label>
+      <label class="opt"><span class="box circle"></span> 2</label>
+      <label class="opt"><span class="box circle"></span> 3</label>
+      <label class="opt"><span class="box circle"></span> 4</label>
+      <label class="opt"><span class="box circle"></span> 5</label>
+    </div>
+  </section>
+
+  <section>
+    <p class="q-num">Q6</p>
+    <p class="question">Where would you actually use something like this?</p>
+    <p class="type">Multiple choice</p>
+    <div class="options">
+      <label class="opt"><span class="box"></span> Hackathons</label>
+      <label class="opt"><span class="box"></span> Business / startup networking events</label>
+      <label class="opt"><span class="box"></span> Coworking or office (work environment match)</label>
+      <label class="opt"><span class="box"></span> Casual vibecoding / AI building sessions</label>
+      <label class="opt"><span class="box"></span> Would not use it</label>
+    </div>
+  </section>
+
+  <section>
+    <p class="q-num">Q7</p>
+    <p class="question">What would make you trust a match from an app?</p>
+    <p class="type">Open response</p>
+    <div class="line"></div>
+    <div class="line"></div>
+  </section>
+
+  <section>
+    <p class="q-num">Q8 · Close</p>
+    <p class="question">Would you try a 60-second profile if we sent you a link after the hackathon?</p>
+    <p class="type">Single choice</p>
+    <div class="options">
+      <label class="opt"><span class="box circle"></span> Yes → collect email or phone (optional)</label>
+      <label class="opt"><span class="box circle"></span> Maybe later</label>
+      <label class="opt"><span class="box circle"></span> No thanks</label>
+    </div>
+    <p style="margin-top: 12px; font-size: 14px; color: var(--gray-500);">Contact: <span class="line" style="display: inline-block; width: 200px; vertical-align: bottom;"></span></p>
+  </section>
+
+  <div class="script">
+    <h2>Interviewer notes</h2>
+    <p><strong>Time target:</strong> 3 minutes. Skip Q4 if they are in a hurry.</p>
+    <p><strong>Record:</strong> Age range (18–24 / 25–34 / 35+), gender (optional), role (dev / design / biz / student).</p>
+    <p><strong>Red flags:</strong> If they say "vibe" sounds cringe, ask what word they would use instead (write in Q7).</p>
+    <p><strong>Closer:</strong> "Thanks. Here is a coffee voucher / sticker. Follow gitcommitted if we launch."</p>
+  </div>
+</div>
+</body>
+</html>

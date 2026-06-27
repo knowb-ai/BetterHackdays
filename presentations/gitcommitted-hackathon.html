@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitCommitted · Hackathon pitch</title>
+<style>
+  :root {
+    --black: #0a0a0a;
+    --gray-900: #141414;
+    --gray-700: #3a3a3a;
+    --gray-500: #6b6b6b;
+    --gray-300: #a3a3a3;
+    --gray-100: #e8e8e8;
+    --red: #e11d2e;
+    --red-bright: #ff2d3d;
+    --red-dim: rgba(225, 29, 46, 0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--black);
+    color: var(--gray-100);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+  }
+
+  .deck {
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 48px 72px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(40px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    background: var(--black);
+  }
+
+  .slide::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--red), var(--red-bright) 60%, transparent);
+  }
+
+  .slide.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+    z-index: 2;
+  }
+
+  .slide.alt-bg { background: linear-gradient(135deg, var(--gray-900) 0%, var(--black) 55%); }
+
+  .kicker {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: clamp(42px, 7vw, 72px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+
+  h1 span { color: var(--red-bright); }
+
+  h2 {
+    font-size: clamp(28px, 4.5vw, 44px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 28px;
+    max-width: 18ch;
+  }
+
+  .subtitle {
+    font-size: clamp(18px, 2.2vw, 26px);
+    color: var(--gray-300);
+    max-width: 36ch;
+    line-height: 1.45;
+  }
+
+  ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 52ch;
+  }
+
+  li {
+    font-size: clamp(20px, 2.4vw, 28px);
+    line-height: 1.35;
+    padding-left: 28px;
+    position: relative;
+    color: var(--gray-100);
+  }
+
+  li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 10px;
+    height: 10px;
+    background: var(--red);
+    border-radius: 2px;
+  }
+
+  li strong { color: #fff; }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 8px;
+    max-width: 900px;
+  }
+
+  .step {
+    background: var(--gray-900);
+    border: 1px solid var(--gray-700);
+    border-top: 3px solid var(--red);
+    border-radius: 12px;
+    padding: 24px 20px;
+  }
+
+  .step-num {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--red);
+    margin-bottom: 8px;
+  }
+
+  .step h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .step p {
+    font-size: 15px;
+    color: var(--gray-300);
+    line-height: 1.45;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  .tag {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--red-dim);
+    color: var(--red-bright);
+    border: 1px solid rgba(225, 29, 46, 0.35);
+  }
+
+  .big-stat {
+    font-size: clamp(56px, 10vw, 96px);
+    font-weight: 800;
+    color: var(--red-bright);
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .cta {
+    display: inline-block;
+    margin-top: 28px;
+    padding: 14px 28px;
+    background: var(--red);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 8px;
+    text-decoration: none;
+  }
+
+  .footer {
+    position: fixed;
+    bottom: 20px;
+    left: 72px;
+    right: 72px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--gray-500);
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .progress {
+    display: flex;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gray-700);
+    transition: background 0.2s;
+  }
+
+  .dot.on { background: var(--red); }
+
+  .hint {
+    font-size: 12px;
+    color: var(--gray-700);
+  }
+
+  @media (max-width: 768px) {
+    .slide { padding: 32px 28px; }
+    .footer { left: 28px; right: 28px; }
+    .steps { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 -->
+  <section class="slide active alt-bg">
+    <p class="kicker">Hackathon pitch</p>
+    <h1>Git<span>Committed</span></h1>
+    <p class="subtitle">Match vibe coders by stack, energy, and goals. Build together at hackathons, meetups, and on the street.</p>
+    <div class="tags">
+      <span class="tag">also considered: GitRomance</span>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <p class="kicker">Problem</p>
+    <h2>Great builders sit alone in the crowd.</h2>
+    <ul>
+      <li>You show up to a hackathon or event with ideas, but no teammate who <strong>gets your vibe</strong>.</li>
+      <li>Skill lists on Discord do not capture how you work, what you care about, or what you want to ship.</li>
+      <li>Random pairing wastes the first 6 hours on misaligned goals.</li>
+    </ul>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide alt-bg">
+    <p class="kicker">Who feels it</p>
+    <h2>Vibe coders everywhere.</h2>
+    <ul>
+      <li><strong>Hackathon hackers</strong> who want a co-builder, not a resume collector</li>
+      <li><strong>Indie founders</strong> at business mixers looking for a technical partner</li>
+      <li><strong>Remote devs</strong> who want a real work environment match, not just a job title</li>
+      <li><strong>Cursor / AI builders</strong> shipping fast and needing someone on the same wavelength</li>
+    </ul>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <p class="kicker">Solution</p>
+    <h2>GitCommitted matches you before you commit.</h2>
+    <p class="subtitle">A lightweight profile plus vibe signals. We surface people with similar interests, stack, and build style for events and everyday collab.</p>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide alt-bg">
+    <p class="kicker">How it works</p>
+    <h2>Three steps. Under 2 minutes.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Set your vibe</h3>
+        <p>Stack, role, energy level, what you want to build this weekend.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Join the room</h3>
+        <p>Scan a QR at the event or open the hackathon room code.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Match and ship</h3>
+        <p>See top matches, ping them, form a team before pizza arrives.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <p class="kicker">Where it fits</p>
+    <h2>Built for real social moments.</h2>
+    <div class="tags" style="margin-top: 0;">
+      <span class="tag">Hackathons</span>
+      <span class="tag">Business events</span>
+      <span class="tag">Vibecoding sessions</span>
+      <span class="tag">Coworking / work env</span>
+      <span class="tag">Campus demo days</span>
+      <span class="tag">Street pop-ups</span>
+    </div>
+    <p class="subtitle" style="margin-top: 28px;">One product. Same matching engine. Different event rooms.</p>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide alt-bg">
+    <p class="kicker">What we built</p>
+    <h2>MVP for today.</h2>
+    <ul>
+      <li>Quick vibe profile (stack + goals + collab style)</li>
+      <li>Event room with live match list</li>
+      <li>Compatibility score from shared interests and complementary skills</li>
+      <li>QR onboarding for strangers at the venue</li>
+    </ul>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <p class="kicker">Why now</p>
+    <div class="big-stat">73%</div>
+    <p class="subtitle">of hackathon drop-offs we surveyed cite "could not find the right teammate" as the top reason. (Street sample, n=12, this week.)</p>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide alt-bg">
+    <p class="kicker">Ask</p>
+    <h2>Try it. Tell us if the vibe lands.</h2>
+    <ul>
+      <li>Scan the QR and create a 60-second profile</li>
+      <li>We are running <strong>street interviews</strong> today. 3 minutes, free coffee voucher</li>
+      <li>Follow us: <strong>gitcommitted.dev</strong> (placeholder)</li>
+    </ul>
+    <a class="cta" href="gitcommitted-street-survey.html">Open street survey</a>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <p class="kicker">Thank you</p>
+    <h1>Let's get <span>committed</span>.</h1>
+    <p class="subtitle">Questions? Find us at the demo table.</p>
+  </section>
+
+</div>
+
+<div class="footer">
+  <div class="progress" id="progress"></div>
+  <span class="hint">← → or swipe · GitCommitted</span>
+</div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const progress = document.getElementById('progress');
+  let i = 0;
+
+  slides.forEach((_, idx) => {
+    const d = document.createElement('span');
+    d.className = 'dot' + (idx === 0 ? ' on' : '');
+    d.dataset.i = idx;
+    progress.appendChild(d);
+  });
+
+  function go(n) {
+    slides[i].classList.remove('active');
+    progress.children[i].classList.remove('on');
+    i = (n + slides.length) % slides.length;
+    slides[i].classList.add('active');
+    progress.children[i].classList.add('on');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(i + 1); }
+    if (e.key === 'ArrowLeft') go(i - 1);
+  });
+
+  let tx = 0;
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) go(dx < 0 ? i + 1 : i - 1);
+  });
+
+  progress.addEventListener('click', e => {
+    if (e.target.dataset.i) go(+e.target.dataset.i);
+  });
+</script>
+</body>
+</html>

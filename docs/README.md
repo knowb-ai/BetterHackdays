@@ -16,6 +16,7 @@ This folder is the working notebook for the product direction beyond pure matchm
 - [Product Vision](./product-vision.md)
 - [Hackathon Playbook](./hackathon-playbook.md)
 - [Event Ingest](./event-ingest.md)
+- [Event Room Onboarding RFC](./event-room-onboarding-rfc.md)
 - [Idea Suggestions](./idea-suggestions.md)
 - [Process Timeline](./process-timeline.md)
 - [MVP Scope](./mvp-scope.md)

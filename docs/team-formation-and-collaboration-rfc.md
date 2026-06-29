@@ -616,6 +616,37 @@ Possible examples:
 
 This may make the system easier to adopt at real events.
 
+## Current Prototype and Architecture Boundary
+
+The existing BetterHackdays software was shaped by the original hackathon
+context and by sponsor or platform integrations such as Lovable, Featherless,
+and Daytona.
+
+Those integrations may still be useful, but they should not automatically
+define the long-term product architecture. The group should discuss which parts
+of the current software are core product direction, which parts are
+prototype-specific, and which parts should become replaceable integrations.
+
+For most team and product decisions, infrastructure details only matter when
+they serve or constrain the product purpose. The team likely cares less about
+which provider is underneath and more about whether the system helps people
+find teams, understand event context, exchange profiles, set up workspaces, and
+start building faster.
+
+Infrastructure choices should therefore be evaluated by their product impact:
+
+- do they improve the participant or organizer workflow?
+- do they make matchmaking, setup, or advisory behavior easier to trust?
+- do they reduce event-day friction?
+- do they keep the system reliable enough for a live event?
+- do they avoid locking the product into sponsor-specific assumptions?
+- do they keep future integrations replaceable?
+
+The current repo can be treated as both a working prototype and a discussion
+artifact for the next architecture. The future architecture may keep parts of
+the existing implementation, adapt them, or replace them with a more
+provider-neutral design.
+
 ## Long-Term Direction
 
 The idea could evolve into a broader hackathon management platform.
@@ -735,6 +766,7 @@ Product risks:
 - event hosts need simple setup or they will not prepare context
 - participants need fast value, not long onboarding
 - matching should not block teams that only want quick setup
+- infrastructure debates should not dominate unless they affect product value
 
 Scale risks:
 
@@ -770,6 +802,19 @@ Context and MCP:
 - Should event hosts be able to white-label the context?
 - How much context should be public?
 - How does the agent know which actions are allowed?
+
+Prototype and architecture assumptions:
+
+- Which parts of the current backend are still core product direction?
+- Which sponsor or platform integrations should remain first-class?
+- Which integrations should become optional adapters?
+- Should the product stay Daytona-native or become provider-neutral?
+- Which assumptions came from the original hackathon build and should be
+  revisited?
+- Is the current repo a foundation, a prototype, or a discussion artifact for
+  the next architecture?
+- Which infrastructure choices actually matter to participants, organizers, or
+  sponsors?
 
 Profiles and privacy:
 

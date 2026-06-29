@@ -1,4 +1,4 @@
-# Event Room Onboarding RFC
+# Team Formation and Collaboration RFC
 
 Status: Idea inventory / RFC draft
 

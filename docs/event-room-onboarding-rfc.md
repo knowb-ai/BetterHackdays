@@ -4,8 +4,22 @@ Status: Idea inventory / RFC draft
 
 Decision status: No product decisions made
 
-Purpose: Preserve and structure the original hackathon follow-up notes so the
-group can discuss scope, priority, feasibility, and product direction.
+Purpose: Preserve, structure, and extend the original hackathon follow-up notes
+so the group can discuss scope, priority, feasibility, and product direction.
+
+## Source and Interpretation Boundary
+
+This document is not a transcript of the original note.
+
+It is a structured synthesis that includes:
+
+- ideas directly captured from the original note
+- normalized wording that groups related ideas together
+- inferred implications that make the idea easier to discuss
+- additional risks and open questions added for group review
+
+The group should treat every item as discussion material until it is explicitly
+accepted, changed, deferred, or removed.
 
 ## Summary
 

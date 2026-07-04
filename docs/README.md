@@ -20,4 +20,3 @@ This folder is the working notebook for the product direction beyond pure matchm
 - [Idea Suggestions](./idea-suggestions.md)
 - [Process Timeline](./process-timeline.md)
 - [MVP Scope](./mvp-scope.md)
-

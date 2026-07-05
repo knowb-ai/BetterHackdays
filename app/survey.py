@@ -3,7 +3,8 @@
 Drives the GitCommitted street survey as a stateful conversation: each
 ``POST /survey/answer`` advances one question and writes the answer into the
 builder's profile via ``mcp_tools.update_profile``. State (current question
-index) is held in memory, keyed by ``harness_id``.
+index) is persisted in SQLite and mirrored in memory as a small process-local
+cache.
 
 Because list fields (skills/interests/looking_for) are appended across
 questions, each answer reads the current profile first and merges.
@@ -102,8 +103,43 @@ QUESTIONS: list[dict[str, Any]] = [
     },
 ]
 
-# In-memory progress: harness_id -> index of the NEXT question to answer.
+# Process-local cache: harness_id -> index of the NEXT question to answer.
 _SESSIONS: dict[str, int] = {}
+
+
+def _clamp_index(index: int) -> int:
+    return max(0, min(index, len(QUESTIONS)))
+
+
+def _get_session_index(harness_id: str) -> int:
+    if harness_id in _SESSIONS:
+        return _clamp_index(_SESSIONS[harness_id])
+
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT next_index FROM survey_sessions WHERE harness_id = ?",
+            (harness_id,),
+        ).fetchone()
+    index = _clamp_index(row["next_index"]) if row else 0
+    _SESSIONS[harness_id] = index
+    return index
+
+
+def _set_session_index(harness_id: str, index: int) -> int:
+    index = _clamp_index(index)
+    _SESSIONS[harness_id] = index
+    with get_conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO survey_sessions (harness_id, next_index)
+            VALUES (?, ?)
+            ON CONFLICT(harness_id) DO UPDATE SET
+                next_index = excluded.next_index,
+                updated_at = datetime('now')
+            """,
+            (harness_id, index),
+        )
+    return index
 
 
 def _question_payload(index: int) -> Optional[dict[str, Any]]:
@@ -268,7 +304,7 @@ def start_survey(harness_id: str) -> dict[str, Any]:
     This is what ``/connect`` calls so connecting kicks off the Socratic loop.
     """
     connect_result = mcp_tools.connect_harness(harness_id)
-    _SESSIONS[harness_id] = 0
+    _set_session_index(harness_id, 0)
     return {
         "status": "survey_started",
         "harness_id": harness_id,
@@ -289,7 +325,7 @@ def _top_matches(harness_id: str, limit: int = MATCHES_ON_COMPLETE) -> list[dict
 
 def answer_survey(harness_id: str, answer: str) -> dict[str, Any]:
     """Record an answer, advance one question, return the next question."""
-    index = _SESSIONS.get(harness_id, 0)
+    index = _get_session_index(harness_id)
     if index >= len(QUESTIONS):
         return {
             "status": "completed",
@@ -305,13 +341,13 @@ def answer_survey(harness_id: str, answer: str) -> dict[str, Any]:
         mcp_tools.update_profile(harness_id=harness_id, **updates)
 
     answered = QUESTIONS[index]
-    _SESSIONS[harness_id] = index + 1
+    _set_session_index(harness_id, index + 1)
     next_q = _question_payload(index + 1)
 
     # Screener decline -> end early. No matches: the profile is too bare to
     # score meaningfully, so we surface an empty list explicitly.
     if answered["key"] == "screener" and "no" in (answer or "").lower():
-        _SESSIONS[harness_id] = len(QUESTIONS)
+        _set_session_index(harness_id, len(QUESTIONS))
         return {
             "status": "ended",
             "answered": answered["num"],
@@ -337,7 +373,7 @@ def answer_survey(harness_id: str, answer: str) -> dict[str, Any]:
 
 def survey_state(harness_id: str) -> dict[str, Any]:
     """Return current survey progress for a harness without advancing."""
-    index = _SESSIONS.get(harness_id, 0)
+    index = _get_session_index(harness_id)
     return {
         "harness_id": harness_id,
         "progress": f"{index}/{len(QUESTIONS)}",

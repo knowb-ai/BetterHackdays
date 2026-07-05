@@ -49,6 +49,12 @@ CREATE TABLE IF NOT EXISTS matches (
     updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS survey_sessions (
+    harness_id      TEXT PRIMARY KEY,
+    next_index      INTEGER NOT NULL DEFAULT 0,
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_swipes_from ON swipes (from_harness_id);
 CREATE INDEX IF NOT EXISTS idx_swipes_to ON swipes (to_harness_id);
 CREATE INDEX IF NOT EXISTS idx_matches_harness ON matches (harness_ids);

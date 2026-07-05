@@ -58,6 +58,31 @@ class MatchmakingFlowTest(unittest.TestCase):
         self.assertEqual(state["progress"], "0/8")
         self.assertFalse(state["done"])
 
+    def test_survey_progress_persists_after_memory_cache_clear(self) -> None:
+        survey.start_survey("harness_alice")
+        answer = survey.answer_survey("harness_alice", "Yes, regularly I code")
+        self.assertEqual(answer["next_question"]["num"], 2)
+
+        survey._SESSIONS.clear()
+
+        state = survey.survey_state("harness_alice")
+        self.assertEqual(state["progress"], "1/8")
+        self.assertEqual(state["question"]["num"], 2)
+        self.assertFalse(state["done"])
+
+        next_answer = survey.answer_survey("harness_alice", "Yes, in the last 6 months")
+        self.assertEqual(next_answer["answered"], 2)
+        self.assertEqual(next_answer["next_question"]["num"], 3)
+
+    def test_start_survey_intentionally_restarts_progress(self) -> None:
+        survey.start_survey("harness_alice")
+        survey.answer_survey("harness_alice", "Yes, regularly I code")
+
+        restarted = survey.start_survey("harness_alice")
+
+        self.assertEqual(restarted["question"]["num"], 1)
+        self.assertEqual(survey.survey_state("harness_alice")["progress"], "0/8")
+
     def test_cards_are_scored_sorted_and_exclude_swiped_profiles(self) -> None:
         self._profile(
             "harness_alice",

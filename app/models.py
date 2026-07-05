@@ -21,6 +21,21 @@ HarnessId = Annotated[
     ),
 ]
 
+EventIngestText = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=20, max_length=12_000),
+]
+
+EventIngestSourceLabel = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=120),
+]
+
+EventIngestSourceUrl = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, max_length=500),
+]
+
 
 # --- Profile -----------------------------------------------------------------
 
@@ -206,9 +221,9 @@ class EventContext(BaseModel):
 
 
 class EventIngestTextRequest(BaseModel):
-    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=20)]
-    source_label: str = "Pasted event text"
-    source_url: Optional[str] = None
+    text: EventIngestText
+    source_label: EventIngestSourceLabel = "Pasted event text"
+    source_url: Optional[EventIngestSourceUrl] = None
 
 
 class EventIngestResponse(BaseModel):

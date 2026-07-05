@@ -65,9 +65,25 @@ class EventIngestTest(unittest.TestCase):
         event = result["event"]
         self.assertEqual(event["event_name"], "Tiny Hackathon")
         self.assertEqual(event["confidence"], "low")
+        self.assertEqual(event["source_notes"][0]["confidence"], "low")
         self.assertIn("starts_at", result["missing_fields"])
         self.assertIn("judging_criteria", result["missing_fields"])
         self.assertIn("Missing or unclear: starts at", event["open_questions"])
+
+    def test_unrelated_urls_do_not_become_submission_url(self) -> None:
+        result = mcp_tools.ingest_event_text(
+            """
+            Event: Public Demo Hackathon
+            Website: https://example.com/event
+            Start: 2026-08-01 09:00
+            End: 2026-08-02 17:00
+            Judging criteria: usefulness, craft, demo clarity
+            """,
+        )
+
+        event = result["event"]
+        self.assertIsNone(event["submission"]["url"])
+        self.assertIn("submission", result["missing_fields"])
 
     def test_route_returns_typed_response_shape(self) -> None:
         response = ingest_event_text_route(
@@ -85,6 +101,10 @@ class EventIngestTest(unittest.TestCase):
     def test_request_rejects_tiny_pasted_text(self) -> None:
         with self.assertRaises(ValidationError):
             EventIngestTextRequest(text="too short")
+
+    def test_request_rejects_oversized_pasted_text(self) -> None:
+        with self.assertRaises(ValidationError):
+            EventIngestTextRequest(text="A" * 12_001)
 
 
 if __name__ == "__main__":

@@ -117,6 +117,22 @@ def _extract_url(text: str) -> str | None:
     return match.group(0).rstrip(".,") if match else None
 
 
+def _extract_submission_url(lines: list[str]) -> str | None:
+    labeled_url = _label_value(lines, "submission url", "submit", "submission")
+    if labeled_url:
+        if labeled_url.startswith(("http://", "https://")):
+            return _extract_url(labeled_url) or labeled_url
+        return _extract_url(labeled_url)
+
+    for line in lines:
+        if not re.search(r"\b(submit|submission|deadline|final)\b", line, re.I):
+            continue
+        url = _extract_url(line)
+        if url:
+            return url
+    return None
+
+
 def _extract_time_value(line: str) -> str | None:
     match = re.search(
         r"(\d{4}-\d{2}-\d{2}(?:[ T]\d{1,2}:\d{2})?|"
@@ -183,12 +199,16 @@ def _has_value(value: Any) -> bool:
     return bool(value)
 
 
-def _source_notes(context: dict[str, Any], source_label: str) -> list[dict[str, str]]:
+def _source_notes(
+    context: dict[str, Any],
+    source_label: str,
+    confidence: str,
+) -> list[dict[str, str]]:
     return [
         {
             "field": field,
             "source_label": source_label,
-            "confidence": "high",
+            "confidence": confidence,
             "note": "Extracted from pasted text.",
         }
         for field in SOURCE_NOTE_FIELDS
@@ -212,9 +232,7 @@ def ingest_pasted_event_text(
         "captured_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    submission_url = _label_value(lines, "submission url", "submit", "submission")
-    if submission_url and not submission_url.startswith(("http://", "https://")):
-        submission_url = _extract_url(submission_url)
+    submission_url = _extract_submission_url(lines)
 
     context: dict[str, Any] = {
         "event_name": event_name,
@@ -235,7 +253,7 @@ def ingest_pasted_event_text(
             for sponsor in _collect_labeled_values(lines, "sponsors", "sponsor")
         ],
         "submission": {
-            "url": submission_url or _extract_url(text),
+            "url": submission_url,
             "requirements": _collect_labeled_values(lines, "submission requirements", "requirements"),
         },
         "allowed_tools": _collect_labeled_values(lines, "allowed tools", "tools"),
@@ -261,7 +279,11 @@ def ingest_pasted_event_text(
         context["confidence"] = "high"
     elif present_key_fields >= 3:
         context["confidence"] = "medium"
-    context["source_notes"] = _source_notes(context, source_label)
+    context["source_notes"] = _source_notes(
+        context,
+        source_label,
+        context["confidence"],
+    )
 
     return {
         "status": "ingested",

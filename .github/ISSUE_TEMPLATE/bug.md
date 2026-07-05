@@ -32,6 +32,20 @@ What should work correctly?
 
 - TBD
 
+## Linked Issues
+
+- TBD
+
+## Suggested Labels
+
+- `bug`
+- `area:*`
+- `stage:*`
+
+## Suggested Milestone
+
+- TBD
+
 ## Reproduction
 
 ```text

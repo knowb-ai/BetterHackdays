@@ -26,6 +26,20 @@ What should this change make possible?
 
 - TBD
 
+## Linked Issues
+
+- TBD
+
+## Suggested Labels
+
+- `enhancement`
+- `area:*`
+- `stage:*`
+
+## Suggested Milestone
+
+- TBD
+
 ## Notes
 
 Follow the repo guidance in `agents.md`: keep the change small, use concise writing, and use conventional commit messages.

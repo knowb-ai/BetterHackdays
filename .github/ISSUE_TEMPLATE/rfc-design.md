@@ -26,6 +26,20 @@ What decision or design question should this clarify?
 
 - TBD
 
+## Linked Issues
+
+- TBD
+
+## Suggested Labels
+
+- `documentation`
+- `area:*`
+- `stage:rfc`
+
+## Suggested Milestone
+
+- TBD
+
 ## Open Questions
 
 - TBD

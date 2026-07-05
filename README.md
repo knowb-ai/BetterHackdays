@@ -84,7 +84,7 @@ Interactive docs: http://localhost:8000/docs
 ## How to run tests
 
 ```bash
-python3 -m unittest discover -s tests
+.venv/bin/python -m unittest discover -s tests
 ```
 
 ## Running inside Daytona Sandbox

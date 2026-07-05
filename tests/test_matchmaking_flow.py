@@ -4,8 +4,13 @@ import os
 import tempfile
 import unittest
 
+from fastapi import HTTPException
+from pydantic import ValidationError
+
 from app import mcp_tools, survey
-from app.db import init_db
+from app.db import get_conn, init_db
+from app.main import like as like_route
+from app.models import ConnectRequest, SwipeRequest
 
 
 class MatchmakingFlowTest(unittest.TestCase):
@@ -145,6 +150,92 @@ class MatchmakingFlowTest(unittest.TestCase):
         self.assertEqual(result["status"], "passed")
         self.assertEqual(mcp_tools.get_matches("harness_alice")["matches"], [])
         self.assertEqual(mcp_tools.get_matches("harness_backend")["matches"], [])
+
+    def test_invalid_harness_ids_fail_model_validation(self) -> None:
+        with self.assertRaises(ValidationError):
+            ConnectRequest(harness_id="")
+        with self.assertRaises(ValidationError):
+            ConnectRequest(harness_id="ab")
+        with self.assertRaises(ValidationError):
+            SwipeRequest(from_harness_id="harness alice", to_harness_id="harness_bob")
+
+        request = ConnectRequest(harness_id="  harness_alice  ")
+        self.assertEqual(request.harness_id, "harness_alice")
+
+    def test_swipes_require_existing_profiles(self) -> None:
+        self._profile(
+            "harness_alice",
+            skills=["frontend"],
+            interests=["demos"],
+            looking_for=["backend"],
+            preferred_role="frontend",
+        )
+
+        with self.assertRaises(mcp_tools.ProfileNotFoundError):
+            mcp_tools.like_profile("harness_alice", "harness_missing")
+        with self.assertRaises(mcp_tools.ProfileNotFoundError):
+            mcp_tools.pass_profile("harness_missing", "harness_alice")
+
+    def test_like_route_returns_clear_errors(self) -> None:
+        self._profile(
+            "harness_alice",
+            skills=["frontend"],
+            interests=["demos"],
+            looking_for=["backend"],
+            preferred_role="frontend",
+        )
+
+        with self.assertRaises(HTTPException) as self_like:
+            like_route(
+                SwipeRequest(
+                    from_harness_id="harness_alice",
+                    to_harness_id="harness_alice",
+                )
+            )
+        self.assertEqual(self_like.exception.status_code, 400)
+        self.assertEqual(
+            self_like.exception.detail,
+            "A harness cannot like itself.",
+        )
+
+        with self.assertRaises(HTTPException) as missing_profile:
+            like_route(
+                SwipeRequest(
+                    from_harness_id="harness_alice",
+                    to_harness_id="harness_missing",
+                )
+            )
+        self.assertEqual(missing_profile.exception.status_code, 404)
+        self.assertIn("harness_missing", missing_profile.exception.detail)
+
+    def test_duplicate_swipe_updates_existing_action(self) -> None:
+        self._profile(
+            "harness_alice",
+            skills=["frontend"],
+            interests=["demos"],
+            looking_for=["backend"],
+            preferred_role="frontend",
+        )
+        self._profile(
+            "harness_backend",
+            skills=["backend"],
+            interests=["demos"],
+            looking_for=["frontend"],
+            preferred_role="backend",
+        )
+
+        mcp_tools.pass_profile("harness_alice", "harness_backend")
+        mcp_tools.like_profile("harness_alice", "harness_backend")
+
+        with get_conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT action FROM swipes
+                WHERE from_harness_id = ? AND to_harness_id = ?
+                """,
+                ("harness_alice", "harness_backend"),
+            ).fetchall()
+        self.assertEqual([row["action"] for row in rows], ["like"])
 
     def test_mutual_like_creates_match_for_both_profiles(self) -> None:
         self._profile(

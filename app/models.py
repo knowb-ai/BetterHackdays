@@ -7,9 +7,19 @@ with no profile data still serializes cleanly.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+
+HarnessId = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=3,
+        max_length=80,
+        pattern=r"^[A-Za-z0-9_.:-]+$",
+    ),
+]
 
 
 # --- Profile -----------------------------------------------------------------
@@ -20,7 +30,7 @@ class ProfileBase(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    harness_id: str = Field(..., description="Unique harness identifier")
+    harness_id: HarnessId = Field(..., description="Unique harness identifier")
     display_label: str = Field("New builder")
     skills: list[str] = Field(default_factory=list)
     interests: list[str] = Field(default_factory=list)
@@ -31,11 +41,11 @@ class ProfileBase(BaseModel):
 
 
 class ConnectRequest(BaseModel):
-    harness_id: str = Field(..., description="Unique harness identifier")
+    harness_id: HarnessId = Field(..., description="Unique harness identifier")
 
 
 class UpdateProfileRequest(BaseModel):
-    harness_id: str = Field(..., description="Unique harness identifier")
+    harness_id: HarnessId = Field(..., description="Unique harness identifier")
     display_label: Optional[str] = "New builder"
     skills: list[str] = Field(default_factory=list)
     interests: list[str] = Field(default_factory=list)
@@ -77,7 +87,7 @@ class UpdateProfileResponse(BaseModel):
 
 
 class MatchCard(BaseModel):
-    harness_id: str
+    harness_id: HarnessId
     display_label: str
     skills: list[str] = Field(default_factory=list)
     interests: list[str] = Field(default_factory=list)
@@ -96,8 +106,8 @@ class CardsResponse(BaseModel):
 
 
 class SwipeRequest(BaseModel):
-    from_harness_id: str
-    to_harness_id: str
+    from_harness_id: HarnessId
+    to_harness_id: HarnessId
 
 
 class SwipeResponse(BaseModel):
@@ -110,7 +120,7 @@ class SwipeResponse(BaseModel):
 
 class MatchRecord(BaseModel):
     match_id: str
-    harness_ids: list[str]
+    harness_ids: list[HarnessId]
     status: str
     next: str
 
@@ -132,7 +142,7 @@ class HealthResponse(BaseModel):
 
 
 class SurveyAnswerRequest(BaseModel):
-    harness_id: str = Field(..., description="Unique harness identifier")
+    harness_id: HarnessId = Field(..., description="Unique harness identifier")
     answer: str = Field(..., description="Free-text answer to the current question")
 
 
@@ -148,7 +158,7 @@ class SurveyAnswerResponse(BaseModel):
 
 
 class SurveyStateResponse(BaseModel):
-    harness_id: str
+    harness_id: HarnessId
     progress: str
     question: Optional[SurveyQuestion] = None
     done: bool

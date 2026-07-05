@@ -28,6 +28,7 @@ from .models import (
     CardsResponse,
     ConnectRequest,
     ConnectResponse,
+    HarnessId,
     HealthResponse,
     MatchCard,
     MatchRecord,
@@ -127,7 +128,7 @@ def update_profile(req: UpdateProfileRequest) -> UpdateProfileResponse:
 
 @app.get("/matchmaking/cards", response_model=CardsResponse)
 def matchmaking_cards(
-    harness_id: str = Query(..., description="Harness requesting cards"),
+    harness_id: HarnessId = Query(..., description="Harness requesting cards"),
 ) -> CardsResponse:
     result = mcp_tools.get_match_cards(harness_id)
     return CardsResponse(cards=result["cards"])
@@ -140,13 +141,19 @@ def matchmaking_cards(
 def like(req: SwipeRequest) -> SwipeResponse:
     if req.from_harness_id == req.to_harness_id:
         raise HTTPException(status_code=400, detail="A harness cannot like itself.")
-    result = mcp_tools.like_profile(req.from_harness_id, req.to_harness_id)
+    try:
+        result = mcp_tools.like_profile(req.from_harness_id, req.to_harness_id)
+    except mcp_tools.ProfileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return SwipeResponse(**result)
 
 
 @app.post("/matchmaking/pass", response_model=SwipeResponse)
 def pass_profile(req: SwipeRequest) -> SwipeResponse:
-    result = mcp_tools.pass_profile(req.from_harness_id, req.to_harness_id)
+    try:
+        result = mcp_tools.pass_profile(req.from_harness_id, req.to_harness_id)
+    except mcp_tools.ProfileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return SwipeResponse(**result)
 
 
@@ -155,7 +162,7 @@ def pass_profile(req: SwipeRequest) -> SwipeResponse:
 
 @app.get("/matches", response_model=MatchesResponse)
 def matches(
-    harness_id: str = Query(..., description="Harness requesting its matches"),
+    harness_id: HarnessId = Query(..., description="Harness requesting its matches"),
 ) -> MatchesResponse:
     result = mcp_tools.get_matches(harness_id)
     return MatchesResponse(matches=[MatchRecord(**m) for m in result["matches"]])
@@ -192,7 +199,10 @@ def survey_answer(req: SurveyAnswerRequest) -> SurveyAnswerResponse:
 
 @app.get("/survey/state", response_model=SurveyStateResponse)
 def survey_state(
-    harness_id: str = Query(..., description="Harness checking its survey progress"),
+    harness_id: HarnessId = Query(
+        ...,
+        description="Harness checking its survey progress",
+    ),
 ) -> SurveyStateResponse:
     result = survey.survey_state(harness_id)
     return SurveyStateResponse(

@@ -19,6 +19,10 @@ from . import matchmaking
 from .db import _dumps, _loads, _row_to_dict, get_conn
 
 
+class ProfileNotFoundError(ValueError):
+    """Raised when an action requires an existing profile."""
+
+
 def _profile_row_to_dict(row: Any) -> dict[str, Any]:
     data = _row_to_dict(row)
     data["skills"] = _loads(data.get("skills"))
@@ -26,6 +30,22 @@ def _profile_row_to_dict(row: Any) -> dict[str, Any]:
     data["looking_for"] = _loads(data.get("looking_for"))
     data["is_seeded"] = bool(data.get("is_seeded"))
     return data
+
+
+def _require_profiles(*harness_ids: str) -> None:
+    missing: list[str] = []
+    with get_conn() as conn:
+        for harness_id in harness_ids:
+            row = conn.execute(
+                "SELECT 1 FROM profiles WHERE harness_id = ?",
+                (harness_id,),
+            ).fetchone()
+            if row is None:
+                missing.append(harness_id)
+    if missing:
+        raise ProfileNotFoundError(
+            "Unknown profile: " + ", ".join(sorted(set(missing)))
+        )
 
 
 def _get_or_create_profile(
@@ -155,11 +175,13 @@ def get_match_cards(harness_id: str) -> dict[str, Any]:
 
 def like_profile(from_harness_id: str, to_harness_id: str) -> dict[str, Any]:
     """Like a candidate and create a mutual match when reciprocated."""
+    _require_profiles(from_harness_id, to_harness_id)
     return matchmaking.like_profile(from_harness_id, to_harness_id)
 
 
 def pass_profile(from_harness_id: str, to_harness_id: str) -> dict[str, Any]:
     """Pass on a candidate. Passes never create matches."""
+    _require_profiles(from_harness_id, to_harness_id)
     return matchmaking.pass_profile(from_harness_id, to_harness_id)
 
 

@@ -81,6 +81,12 @@ cp .env.example .env   # optional; defaults work without it
 
 Interactive docs: http://localhost:8000/docs
 
+## How to run tests
+
+```bash
+.venv/bin/python -m unittest discover -s tests
+```
+
 ## Running inside Daytona Sandbox
 
 This service is intended to run inside **one long-lived Daytona Sandbox**.
@@ -148,8 +154,9 @@ profile progressively. Each `POST /survey/answer`:
 
 The **last answer** sets `done: true` and attaches the top 5 match cards inline.
 Answering `No` to the screener (Q1) ends the survey early with `matches: []`.
-Survey state is held in memory keyed by `harness_id`, so a restarted backend
-resets in-progress sessions (profiles persist in SQLite).
+Survey progress is persisted in SQLite keyed by `harness_id`, so restarted
+backends can resume at the next unanswered question. Calling `/connect` or
+`/survey/start` intentionally restarts the survey at Q1 for that harness.
 
 The 8 questions cover: screener → event attendance → hardest part of finding
 teamates → how you find collaborators today → appeal (1-5) → where you'd use it

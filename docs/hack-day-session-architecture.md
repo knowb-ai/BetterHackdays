@@ -101,6 +101,10 @@ required permissions.
 The repo becomes the durable workspace for team documents, planning traces,
 setup notes, and later agent-generated artifacts.
 
+The workspace repo also acts as the team's MCP drive connector target. The
+main BetterHackdays MCP server should treat this repo as the shared project
+state for the team room once it has been approved and attached.
+
 ## Hack Day lifecycle
 
 1. Organizer creates or wakes up a Hack Day.
@@ -118,7 +122,9 @@ setup notes, and later agent-generated artifacts.
 13. Server creates a team room.
 14. Team approves GitHub permissions.
 15. Server creates or attaches a shared GitHub repo.
-16. Repo is initialized with team docs, planning files, and MCP context.
+16. Repo is registered as the team room's MCP workspace target.
+17. Repo is initialized with team docs, planning files, code scaffolds, tool
+    manifests, and MCP context.
 
 ## CLI and MCP experience
 
@@ -167,21 +173,146 @@ The first safe workflow should be:
 4. Server creates or attaches the repo.
 5. Server invites the matched teammate or records invite instructions.
 6. Server initializes basic workspace docs.
-7. BetterHackdays stores the repo as the team-room workspace target.
+7. BetterHackdays registers the repo as the team-room MCP workspace target.
+8. Later BetterHackdays MCP calls read from and write to that repo as the
+   durable team workspace.
 
 The system should avoid dangerous automation until permission and ownership
 rules are clear.
+
+## Workspace repo as MCP drive connector
+
+The workspace repo is not just a code repository. After mutual match and
+permission approval, it becomes the connected drive for the team's BetterHackdays
+MCP session.
+
+The main BetterHackdays MCP server owns the Hack Day and team-room state. The
+workspace repo owns the durable project state. Agent and CLI calls should use
+both:
+
+```text
+Agent / CLI
+        ↓
+BetterHackdays MCP server
+        ↓
+Team room session state
+        ↓
+GitHub workspace repo connector
+        ↓
+Docs, code, tools, skills, traces, and artifacts
+```
+
+The team room should store the repo connection metadata:
+
+- GitHub owner and repo name
+- default branch
+- installation or permission status
+- connected participant IDs
+- active idea or project direction
+- last synced planning snapshot
+- allowed write targets
+- audit log of server-created changes
+
+The MCP server should then expose team-room tools that operate on this repo,
+such as:
+
+- create or update planning docs
+- create starter code structure
+- add or update agent instructions
+- add recommended tool manifests
+- add skill extension stubs
+- record decisions and planning traces
+- summarize current workspace state
+- prepare submission artifacts
+
+## Workspace initialization bundle
+
+When the repo is first connected, BetterHackdays should add a small, useful
+workspace bundle instead of a large generated dump.
+
+The initial bundle should include:
+
+- `README.md` with team, event, project direction, and quickstart
+- `AGENTS.md` with team-specific agent guidelines
+- `docs/event-context.md` with normalized event context and source notes
+- `docs/team-profile.md` with consented team role and skill summary
+- `docs/idea.md` with selected or ranked idea direction
+- `docs/process-plan.md` with the timeline and milestones
+- `docs/checklist.md` with immediate next actions
+- `docs/submission.md` with deadlines and submission requirements
+- `.betterhackdays/session.json` with non-secret team-room metadata
+- `.betterhackdays/tooling.md` with recommended tools and manual setup steps
+
+Secrets, OAuth tokens, contact details, and private participant data should not
+be written into the repo by default.
+
+## Code, tools, and skill extensions
+
+BetterHackdays may also add optional project scaffolding when the team approves
+it. This should be explicit and reviewable.
+
+Possible additions:
+
+- lightweight app or API scaffold based on the selected idea
+- test skeletons
+- `.env.example`
+- issue or task list
+- MCP tool manifest notes
+- connector setup instructions
+- agent skill extension stubs
+- prompt or command snippets for the team's preferred harnesses
+
+Skill extensions should start as editable files in the repo, not hidden server
+state. The goal is for coding agents to see and improve the team's workflow in
+the same place as the code.
+
+Suggested skill extension layout:
+
+```text
+.betterhackdays/
+  session.json
+  tooling.md
+  skills/
+    README.md
+    demo-prep.md
+    submission-check.md
+    judge-alignment.md
+```
+
+These files should describe how agents can help this specific team, using this
+specific event context, without requiring the main BetterHackdays repo to hold
+team-specific instructions.
+
+## Sync model
+
+The main BetterHackdays server should treat the workspace repo as appendable
+and reviewable project state.
+
+Recommended rules:
+
+- prefer pull-request or branch-based writes when automation becomes risky
+- keep generated docs concise and easy to edit
+- never overwrite user edits without detecting drift
+- commit generated changes with conventional commit messages
+- record what tool created a change and why
+- allow the team to disconnect or rotate the workspace repo
+
+The first prototype can use direct commits after explicit approval. Later
+versions should support safer branch or pull-request flows.
 
 ## Workspace docs to initialize
 
 A new team repo should start with concise files such as:
 
 - `README.md` with project direction and team members
+- `docs/team-profile.md`
 - `docs/event-context.md`
 - `docs/idea.md`
 - `docs/process-plan.md`
 - `docs/checklist.md`
 - `docs/submission.md`
+- `.betterhackdays/session.json`
+- `.betterhackdays/tooling.md`
 - `AGENTS.md` or equivalent agent instructions
 
 These files make the repo useful for coding agents immediately.
@@ -192,6 +323,8 @@ These files make the repo useful for coding agents immediately.
 - Do not use IP cluster as identity.
 - Do not share contact details without explicit consent.
 - Do not create or invite users to GitHub repos without explicit permission.
+- Do not write secrets, tokens, or private contact data into workspace repos.
+- Do not overwrite participant-authored repo files without drift checks.
 - Do not let admin or organizer actions happen through MCP without clear auth.
 - Keep sensitive profile fields scoped to the Hack Day unless the user opts in.
 
@@ -202,4 +335,6 @@ These files make the repo useful for coding agents immediately.
 - Should Hack Day endpoints be isolated by path, token, subdomain, or database row?
 - What is the first notification mechanism: polling, webhook, email, or CLI loop?
 - What GitHub permissions are required for the first safe repo handoff?
+- Should repo writes happen directly, through branches, or through pull requests?
+- Which files belong in the first workspace initialization bundle?
 - How long should Hack Day session data live after the event ends?

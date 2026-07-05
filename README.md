@@ -118,6 +118,7 @@ SEED_PROFILES=true .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 | POST   | `/survey/start`            | (Re)start the survey for a harness, returns Q1      |
 | POST   | `/survey/answer`           | Record one answer, update profile, return next Q + matches on finish |
 | GET    | `/survey/state`            | Peek at current survey progress without advancing   |
+| POST   | `/event/ingest/text`       | Normalize pasted hackathon text into event context   |
 | POST   | `/profile/update`          | Upsert profile fields (skills, role, vibe, etc.)    |
 | GET    | `/matchmaking/cards`       | Anonymized, scored, sorted candidate cards          |
 | POST   | `/matchmaking/like`        | Like a candidate; mutual like → match               |
@@ -249,6 +250,14 @@ curl -X POST "$BASE/connect" \
 curl -X POST "$BASE/survey/answer" \
   -H "Content-Type: application/json" \
   -d '{"harness_id":"warp_zubin_001","answer":"Yes, regularly I code"}'
+
+# Ingest pasted event text
+curl -X POST "$BASE/event/ingest/text" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source_label":"Event page paste",
+    "text":"Event: Agent Sprint Hackathon\nLocation: Berlin\nStart: 2026-07-10 09:00\nEnd: 2026-07-12 18:00\nTracks: AI agents, developer tools\nTeam size: 1-4\nSubmission deadline: 2026-07-12 16:00 via https://example.com/submit\nJudging criteria: Technical execution, demo quality\nSubmission requirements: Repository URL, demo video"
+  }'
 
 # Update profile
 curl -X POST "$BASE/profile/update" \

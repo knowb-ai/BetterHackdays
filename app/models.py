@@ -148,6 +148,13 @@ class EventSource(BaseModel):
     captured_at: str
 
 
+class EventFieldSourceNote(BaseModel):
+    field: str
+    source_label: str
+    confidence: Literal["high", "medium", "low"]
+    note: str
+
+
 class EventTeamSize(BaseModel):
     min: Optional[int] = None
     max: Optional[int] = None
@@ -195,6 +202,7 @@ class EventContext(BaseModel):
     open_questions: list[str] = Field(default_factory=list)
     confidence: Literal["high", "medium", "low"]
     sources: list[EventSource] = Field(default_factory=list)
+    source_notes: list[EventFieldSourceNote] = Field(default_factory=list)
 
 
 class EventIngestTextRequest(BaseModel):

@@ -21,6 +21,17 @@ KEY_FIELDS = (
     "submission",
 )
 
+SOURCE_NOTE_FIELDS = (
+    "event_name",
+    "starts_at",
+    "ends_at",
+    "tracks",
+    "team_size",
+    "deadlines",
+    "judging_criteria",
+    "submission",
+)
+
 
 def _clean(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip(" -:\t")
@@ -162,6 +173,29 @@ def _extract_prefixed_lines(lines: list[str], *prefixes: str) -> list[str]:
     return out
 
 
+def _has_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, list):
+        return bool(value)
+    if isinstance(value, dict):
+        return any(_has_value(v) for v in value.values())
+    return bool(value)
+
+
+def _source_notes(context: dict[str, Any], source_label: str) -> list[dict[str, str]]:
+    return [
+        {
+            "field": field,
+            "source_label": source_label,
+            "confidence": "high",
+            "note": "Extracted from pasted text.",
+        }
+        for field in SOURCE_NOTE_FIELDS
+        if _has_value(context.get(field))
+    ]
+
+
 def ingest_pasted_event_text(
     text: str,
     *,
@@ -209,6 +243,7 @@ def ingest_pasted_event_text(
         "open_questions": [],
         "confidence": "low",
         "sources": [source],
+        "source_notes": [],
     }
 
     missing = [
@@ -226,6 +261,7 @@ def ingest_pasted_event_text(
         context["confidence"] = "high"
     elif present_key_fields >= 3:
         context["confidence"] = "medium"
+    context["source_notes"] = _source_notes(context, source_label)
 
     return {
         "status": "ingested",

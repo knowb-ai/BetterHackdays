@@ -52,6 +52,9 @@ class EventIngestTest(unittest.TestCase):
         self.assertEqual(event["confidence"], "high")
         self.assertEqual(event["sources"][0]["source_label"], "Hackathon page paste")
         self.assertEqual(event["sources"][0]["source_url"], "https://example.com/event")
+        noted_fields = {note["field"] for note in event["source_notes"]}
+        self.assertIn("event_name", noted_fields)
+        self.assertIn("submission", noted_fields)
         self.assertNotIn("event_name", result["missing_fields"])
 
     def test_missing_fields_are_explicit(self) -> None:
@@ -77,6 +80,7 @@ class EventIngestTest(unittest.TestCase):
         self.assertEqual(response.status, "ingested")
         self.assertEqual(response.event.event_name, "Agent Sprint Hackathon")
         self.assertEqual(response.event.sources[0].source_label, "Route test paste")
+        self.assertEqual(response.event.source_notes[0].confidence, "high")
 
     def test_request_rejects_tiny_pasted_text(self) -> None:
         with self.assertRaises(ValidationError):

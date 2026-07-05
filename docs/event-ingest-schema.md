@@ -24,6 +24,17 @@ Every ingest result should keep source information so agents can explain where a
 }
 ```
 
+Field-level source notes should point important extracted fields back to the source that produced them:
+
+```json
+{
+  "field": "event_name",
+  "source_label": "Event page paste",
+  "confidence": "high",
+  "note": "Extracted from pasted text."
+}
+```
+
 ## Event Context
 
 ```json
@@ -69,18 +80,49 @@ Every ingest result should keep source information so agents can explain where a
   "recommended_tools": ["Daytona"],
   "open_questions": ["What is the exact team size limit?"],
   "confidence": "medium",
-  "sources": []
+  "sources": [],
+  "source_notes": []
 }
 ```
 
 ## Required Fields
 
-- `event_name`
-- `source_type`
-- `confidence`
-- `open_questions`
+- response `status`
+- response `event`
+- response `missing_fields`
+- response `next`
+- event `confidence`
+- event `open_questions`
+- event `sources`
+- event `source_notes`
 
-All other fields should be optional for M2. Missing data should be explicit rather than guessed.
+Within `event`, every domain field should be optional for M2. Missing data should be explicit rather than guessed.
+
+## Field Catalog
+
+| Field | Type | M2 Required | Notes |
+| --- | --- | --- | --- |
+| `event_name` | string | no | Best available name or title. |
+| `description` | string | no | Short event summary when obvious. |
+| `format` | string | no | One of `in_person`, `online`, or `hybrid` when clear. |
+| `location` | string | no | Venue, city, or remote location details. |
+| `timezone` | string | no | IANA timezone or source-provided text. |
+| `starts_at` | string | no | Source-provided date or datetime. |
+| `ends_at` | string | no | Source-provided date or datetime. |
+| `tracks` | string array | no | Themes, categories, or tracks. |
+| `team_size` | object | no | `min` and `max` when stated. |
+| `deadlines` | object array | no | Named deadline checkpoints. |
+| `judging_criteria` | object array | no | Criteria used for scoring or prizes. |
+| `rules` | string array | no | Rules directly stated in the source. |
+| `constraints` | string array | no | Required or limiting conditions. |
+| `sponsors` | object array | no | Sponsor names and requirements when stated. |
+| `submission` | object | no | Submission URL and requirements. |
+| `allowed_tools` | string array | no | Tools explicitly allowed. |
+| `recommended_tools` | string array | no | Tools recommended by organizers. |
+| `open_questions` | string array | yes | Missing or ambiguous fields to review. |
+| `confidence` | string | yes | One of `high`, `medium`, or `low`. |
+| `sources` | object array | yes | Source documents or pasted text metadata. |
+| `source_notes` | object array | yes | Field-level extraction notes. |
 
 ## Confidence
 
@@ -90,6 +132,8 @@ Use a simple string for M2:
 - `medium`: field values are inferred from nearby text
 - `low`: important fields are missing or ambiguous
 
+For the first pasted-text prototype, field-level `source_notes` should only claim `high` confidence when values are directly extracted from pasted text. Later ingest modes can add more nuanced confidence.
+
 ## Conflict Handling
 
 When sources disagree:
@@ -97,6 +141,15 @@ When sources disagree:
 - keep the latest directly stated value
 - add the conflict to `open_questions`
 - keep source notes so the user can review the ambiguity
+
+M2 only accepts one pasted-text source per request, so conflict handling is documented for the schema but not yet implemented as a multi-source merge.
+
+## Answers to Event Ingest Open Questions
+
+- Smallest useful schema: the response shape above, with optional domain fields, explicit `missing_fields`, and required confidence/source metadata.
+- Conflicting source data: carry conflicts in `open_questions` and `source_notes`; multi-source conflict resolution is outside the first endpoint.
+- Optional fields: all event domain fields are optional for M2 because pasted text may be incomplete.
+- Low confidence: return `confidence: "low"` and list missing or unclear fields instead of inventing values.
 
 ## M2 Boundaries
 

@@ -102,6 +102,7 @@ When sources disagree:
 
 In scope:
 
+- `POST /event/ingest/text`
 - pasted text as the first ingest source
 - deterministic extraction where possible
 - explicit missing fields

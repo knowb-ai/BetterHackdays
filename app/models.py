@@ -7,7 +7,7 @@ with no profile data still serializes cleanly.
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
@@ -136,6 +136,78 @@ class HealthResponse(BaseModel):
     status: str
     service: str
     runtime: str
+
+
+# --- Event ingest -------------------------------------------------------------
+
+
+class EventSource(BaseModel):
+    source_type: Literal["pasted_text"]
+    source_label: str
+    source_url: Optional[str] = None
+    captured_at: str
+
+
+class EventTeamSize(BaseModel):
+    min: Optional[int] = None
+    max: Optional[int] = None
+
+
+class EventDeadline(BaseModel):
+    name: str
+    due_at: Optional[str] = None
+    description: Optional[str] = None
+
+
+class EventJudgingCriterion(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class EventSponsor(BaseModel):
+    name: str
+    requirements: list[str] = Field(default_factory=list)
+
+
+class EventSubmission(BaseModel):
+    url: Optional[str] = None
+    requirements: list[str] = Field(default_factory=list)
+
+
+class EventContext(BaseModel):
+    event_name: Optional[str] = None
+    description: Optional[str] = None
+    format: Optional[str] = None
+    location: Optional[str] = None
+    timezone: Optional[str] = None
+    starts_at: Optional[str] = None
+    ends_at: Optional[str] = None
+    tracks: list[str] = Field(default_factory=list)
+    team_size: Optional[EventTeamSize] = None
+    deadlines: list[EventDeadline] = Field(default_factory=list)
+    judging_criteria: list[EventJudgingCriterion] = Field(default_factory=list)
+    rules: list[str] = Field(default_factory=list)
+    constraints: list[str] = Field(default_factory=list)
+    sponsors: list[EventSponsor] = Field(default_factory=list)
+    submission: EventSubmission = Field(default_factory=EventSubmission)
+    allowed_tools: list[str] = Field(default_factory=list)
+    recommended_tools: list[str] = Field(default_factory=list)
+    open_questions: list[str] = Field(default_factory=list)
+    confidence: Literal["high", "medium", "low"]
+    sources: list[EventSource] = Field(default_factory=list)
+
+
+class EventIngestTextRequest(BaseModel):
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=20)]
+    source_label: str = "Pasted event text"
+    source_url: Optional[str] = None
+
+
+class EventIngestResponse(BaseModel):
+    status: str
+    event: EventContext
+    missing_fields: list[str] = Field(default_factory=list)
+    next: str
 
 
 # --- Survey onboarding --------------------------------------------------------

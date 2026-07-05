@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from . import matchmaking
+from . import event_ingest, matchmaking
 from .db import _dumps, _loads, _row_to_dict, get_conn
 
 
@@ -190,6 +190,19 @@ def get_matches(harness_id: str) -> dict[str, Any]:
     return {"matches": matchmaking.get_matches(harness_id)}
 
 
+def ingest_event_text(
+    text: str,
+    source_label: str = "Pasted event text",
+    source_url: str | None = None,
+) -> dict[str, Any]:
+    """Return normalized event context extracted from pasted event text."""
+    return event_ingest.ingest_pasted_event_text(
+        text,
+        source_label=source_label,
+        source_url=source_url,
+    )
+
+
 # Registry for a future MCP server to enumerate and register these as tools.
 MCP_TOOLS = {
     "connect_harness": connect_harness,
@@ -198,4 +211,5 @@ MCP_TOOLS = {
     "like_profile": like_profile,
     "pass_profile": pass_profile,
     "get_matches": get_matches,
+    "ingest_event_text": ingest_event_text,
 }

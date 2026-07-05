@@ -28,6 +28,8 @@ from .models import (
     CardsResponse,
     ConnectRequest,
     ConnectResponse,
+    EventIngestResponse,
+    EventIngestTextRequest,
     HarnessId,
     HealthResponse,
     MatchCard,
@@ -121,6 +123,19 @@ def update_profile(req: UpdateProfileRequest) -> UpdateProfileResponse:
         profile=Profile(**result["profile"]),
         next=result["next"],
     )
+
+
+# --- event ingest ------------------------------------------------------------
+
+
+@app.post("/event/ingest/text", response_model=EventIngestResponse)
+def ingest_event_text(req: EventIngestTextRequest) -> EventIngestResponse:
+    result = mcp_tools.ingest_event_text(
+        text=req.text,
+        source_label=req.source_label,
+        source_url=req.source_url,
+    )
+    return EventIngestResponse(**result)
 
 
 # --- matchmaking cards -------------------------------------------------------

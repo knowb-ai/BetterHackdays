@@ -233,6 +233,32 @@ class EventIngestResponse(BaseModel):
     next: str
 
 
+# --- Planner -----------------------------------------------------------------
+
+
+class IdeaSuggestion(BaseModel):
+    idea_type: Literal["safe_default", "ambitious", "niche", "fast_fallback"]
+    summary: str
+    why_it_fits: str
+    main_tradeoff: str
+    score: int
+    signals: list[str] = Field(default_factory=list)
+
+
+class IdeaSuggestionsRequest(BaseModel):
+    event: EventContext
+    profile: Optional[Profile] = None
+    team: list[Profile] = Field(default_factory=list)
+    topics: list[str] = Field(default_factory=list)
+
+
+class IdeaSuggestionsResponse(BaseModel):
+    status: str
+    ideas: list[IdeaSuggestion] = Field(default_factory=list)
+    ranking_signals: list[str] = Field(default_factory=list)
+    next: str
+
+
 # --- Survey onboarding --------------------------------------------------------
 
 

@@ -32,6 +32,8 @@ from .models import (
     EventIngestTextRequest,
     HarnessId,
     HealthResponse,
+    IdeaSuggestionsRequest,
+    IdeaSuggestionsResponse,
     MatchCard,
     MatchRecord,
     MatchesResponse,
@@ -136,6 +138,20 @@ def ingest_event_text(req: EventIngestTextRequest) -> EventIngestResponse:
         source_url=req.source_url,
     )
     return EventIngestResponse(**result)
+
+
+# --- planner ----------------------------------------------------------------
+
+
+@app.post("/planner/ideas", response_model=IdeaSuggestionsResponse)
+def planner_ideas(req: IdeaSuggestionsRequest) -> IdeaSuggestionsResponse:
+    result = mcp_tools.rank_idea_suggestions(
+        event=req.event.model_dump(),
+        profile=req.profile.model_dump() if req.profile else None,
+        team=[member.model_dump() for member in req.team],
+        topics=req.topics,
+    )
+    return IdeaSuggestionsResponse(**result)
 
 
 # --- matchmaking cards -------------------------------------------------------

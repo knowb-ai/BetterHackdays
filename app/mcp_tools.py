@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from . import event_ingest, matchmaking
+from . import event_ingest, matchmaking, planner
 from .db import _dumps, _loads, _row_to_dict, get_conn
 
 
@@ -203,6 +203,21 @@ def ingest_event_text(
     )
 
 
+def rank_idea_suggestions(
+    event: Any,
+    profile: Any = None,
+    team: Optional[list[Any]] = None,
+    topics: Optional[list[str]] = None,
+) -> dict[str, Any]:
+    """Return concise ranked hackathon ideas from event and team signals."""
+    return planner.rank_idea_suggestions(
+        event,
+        profile=profile,
+        team=team,
+        topics=topics,
+    )
+
+
 # Registry for a future MCP server to enumerate and register these as tools.
 MCP_TOOLS = {
     "connect_harness": connect_harness,
@@ -212,4 +227,5 @@ MCP_TOOLS = {
     "pass_profile": pass_profile,
     "get_matches": get_matches,
     "ingest_event_text": ingest_event_text,
+    "rank_idea_suggestions": rank_idea_suggestions,
 }

@@ -15,7 +15,7 @@
       "title": "BetterHackdays Docs",
       "source_path": "docs/README.md",
       "okf_path": "docs/.okf/README.okf.json",
-      "sha256": "04223c041eadf1e55b5c4951ff3e7e562521132c77b5f27be86c29ad7b8dc29c"
+      "sha256": "146a0af93be8ec850fe5410f6301ab03f4de6a8f62f7067c736b9bb4eeb63521"
     },
     {
       "id": "betterhackdays.docs.development",
@@ -72,6 +72,13 @@
       "source_path": "docs/mvp-scope.md",
       "okf_path": "docs/.okf/mvp-scope.okf.json",
       "sha256": "1770b340bb4a4cefd5f70ed80f5de6425f77713b3b49b466607da5bdfbb32200"
+    },
+    {
+      "id": "betterhackdays.docs.one-user-validation",
+      "title": "One-User Validation",
+      "source_path": "docs/one-user-validation.md",
+      "okf_path": "docs/.okf/one-user-validation.okf.json",
+      "sha256": "1d1bb6e026dad642021f55a36d2b8a307cdbf53f31f572312fc875f15d05f214"
     },
     {
       "id": "betterhackdays.docs.prep-checklist",

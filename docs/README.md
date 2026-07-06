@@ -23,6 +23,7 @@ This folder is the working notebook for the product direction beyond pure matchm
 - [Team Formation and Collaboration RFC](./team-formation-and-collaboration-rfc.md)
 - [Slug Resolution Model](./slug-resolution-model.md)
 - [MCP Server](./mcp-server.md)
+- [One-User Validation](./one-user-validation.md)
 - [Development](./development.md)
 - [Idea Suggestions](./idea-suggestions.md)
 - [Process Timeline](./process-timeline.md)

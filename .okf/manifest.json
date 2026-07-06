@@ -19,10 +19,10 @@
   "documents": [
     {
       "id": "betterhackdays.repo.README",
-      "title": "BetterHackdays - Hack Day Matchmaking Backend",
+      "title": "BetterHackdays",
       "source_path": "README.md",
       "okf_path": ".okf/README.okf.json",
-      "sha256": "8cefa5d642290bbcf3ecd669827ebee616d1e1ee0bbf94ee51a88298fe9da9a8"
+      "sha256": "91a9a6a659a887d2ad25a148194c5a4a96fb04d464fd32c3b2a368743e8d0d51"
     },
     {
       "id": "betterhackdays.repo.agents",
@@ -36,7 +36,14 @@
       "title": "BetterHackdays Docs",
       "source_path": "docs/README.md",
       "okf_path": "docs/.okf/README.okf.json",
-      "sha256": "b7ce2dd8be34ea8bdfe4e96ca26bec8e55a3c8029845139d9c525618e2223df3"
+      "sha256": "04223c041eadf1e55b5c4951ff3e7e562521132c77b5f27be86c29ad7b8dc29c"
+    },
+    {
+      "id": "betterhackdays.docs.development",
+      "title": "Development",
+      "source_path": "docs/development.md",
+      "okf_path": "docs/.okf/development.okf.json",
+      "sha256": "6287037402db3f368c846355478388f1f4e6d7d49cb055e12e975f3829ccd1d8"
     },
     {
       "id": "betterhackdays.docs.event-ingest-schema",
@@ -72,6 +79,13 @@
       "source_path": "docs/idea-suggestions.md",
       "okf_path": "docs/.okf/idea-suggestions.okf.json",
       "sha256": "a4d9c2869f61bb4b6f6d9359ce06f6645dec4256e257d95c11fbf38563377265"
+    },
+    {
+      "id": "betterhackdays.docs.mcp-server",
+      "title": "MCP Server",
+      "source_path": "docs/mcp-server.md",
+      "okf_path": "docs/.okf/mcp-server.okf.json",
+      "sha256": "ac678f1a5d54d8ca921cfa0c93edb216b2f1044326feae637e0c89a621cdf00b"
     },
     {
       "id": "betterhackdays.docs.mvp-scope",

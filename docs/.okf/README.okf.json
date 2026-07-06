@@ -1,0 +1,23 @@
+{
+  "okf_version": "google-open-knowledge-format/v1",
+  "kind": "knowledge_document",
+  "id": "betterhackdays.docs.README",
+  "title": "BetterHackdays Docs",
+  "source": {
+    "path": "docs/README.md",
+    "media_type": "text/markdown; charset=utf-8",
+    "sha256": "c041a21b32bd4bf4114058a8328842091ba63f7c8fb1c84f0e472b48d9a633ce"
+  },
+  "content": {
+    "mode": "external_reference",
+    "path": "docs/README.md",
+    "preserve_source_bytes": true
+  },
+  "relationships": [],
+  "compatibility": {
+    "machine_readable": true,
+    "lossless_conversion": true,
+    "content_mutation": "none",
+    "extension_policy": "additive"
+  }
+}

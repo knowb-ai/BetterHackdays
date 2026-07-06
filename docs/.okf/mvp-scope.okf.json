@@ -1,0 +1,23 @@
+{
+  "okf_version": "google-open-knowledge-format/v1",
+  "kind": "knowledge_document",
+  "id": "betterhackdays.docs.mvp-scope",
+  "title": "MVP Scope",
+  "source": {
+    "path": "docs/mvp-scope.md",
+    "media_type": "text/markdown; charset=utf-8",
+    "sha256": "1770b340bb4a4cefd5f70ed80f5de6425f77713b3b49b466607da5bdfbb32200"
+  },
+  "content": {
+    "mode": "external_reference",
+    "path": "docs/mvp-scope.md",
+    "preserve_source_bytes": true
+  },
+  "relationships": [],
+  "compatibility": {
+    "machine_readable": true,
+    "lossless_conversion": true,
+    "content_mutation": "none",
+    "extension_policy": "additive"
+  }
+}

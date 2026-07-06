@@ -1,0 +1,23 @@
+{
+  "okf_version": "google-open-knowledge-format/v1",
+  "kind": "knowledge_document",
+  "id": "betterhackdays.docs.prep-checklist",
+  "title": "Prep Checklist",
+  "source": {
+    "path": "docs/prep-checklist.md",
+    "media_type": "text/markdown; charset=utf-8",
+    "sha256": "0517827b560abdf2916d712535a6c743784c64344cdd23912ac3154b15293d22"
+  },
+  "content": {
+    "mode": "external_reference",
+    "path": "docs/prep-checklist.md",
+    "preserve_source_bytes": true
+  },
+  "relationships": [],
+  "compatibility": {
+    "machine_readable": true,
+    "lossless_conversion": true,
+    "content_mutation": "none",
+    "extension_policy": "additive"
+  }
+}

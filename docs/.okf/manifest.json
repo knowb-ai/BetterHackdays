@@ -1,0 +1,98 @@
+{
+  "okf_version": "google-open-knowledge-format/v1",
+  "kind": "knowledge_collection",
+  "id": "betterhackdays.docs",
+  "title": "BetterHackdays Docs",
+  "description": "Lossless OKF sidecar package for the BetterHackdays docs folder.",
+  "content_policy": {
+    "source_documents_unchanged": false,
+    "conversion_type": "sidecar_metadata",
+    "extension_policy": "additive"
+  },
+  "documents": [
+    {
+      "id": "betterhackdays.docs.README",
+      "title": "BetterHackdays Docs",
+      "source_path": "docs/README.md",
+      "okf_path": "docs/.okf/README.okf.json",
+      "sha256": "b7ce2dd8be34ea8bdfe4e96ca26bec8e55a3c8029845139d9c525618e2223df3"
+    },
+    {
+      "id": "betterhackdays.docs.event-ingest-schema",
+      "title": "Event Ingest Schema",
+      "source_path": "docs/event-ingest-schema.md",
+      "okf_path": "docs/.okf/event-ingest-schema.okf.json",
+      "sha256": "f799b993260294fd0e5264c45a85126a0d95f10e41cb573d091fd9c85cfa2585"
+    },
+    {
+      "id": "betterhackdays.docs.event-ingest",
+      "title": "Event Ingest",
+      "source_path": "docs/event-ingest.md",
+      "okf_path": "docs/.okf/event-ingest.okf.json",
+      "sha256": "dd0ab9835ef67d1ea985e73023e3f894b4c8ed632d3508209a870726fc5e6853"
+    },
+    {
+      "id": "betterhackdays.docs.hack-day-session-architecture",
+      "title": "Hack Day Session Architecture",
+      "source_path": "docs/hack-day-session-architecture.md",
+      "okf_path": "docs/.okf/hack-day-session-architecture.okf.json",
+      "sha256": "61e73beaf54bd96115ecd3f6b0653344101d20fc5c3a2be01ae4e4ff612a51b3"
+    },
+    {
+      "id": "betterhackdays.docs.hackathon-playbook",
+      "title": "Hackathon Playbook",
+      "source_path": "docs/hackathon-playbook.md",
+      "okf_path": "docs/.okf/hackathon-playbook.okf.json",
+      "sha256": "c0497cfd74558474504ff05db3a3d2bb6caf950907715174ef33418e54e1722a"
+    },
+    {
+      "id": "betterhackdays.docs.idea-suggestions",
+      "title": "Idea Suggestions",
+      "source_path": "docs/idea-suggestions.md",
+      "okf_path": "docs/.okf/idea-suggestions.okf.json",
+      "sha256": "a4d9c2869f61bb4b6f6d9359ce06f6645dec4256e257d95c11fbf38563377265"
+    },
+    {
+      "id": "betterhackdays.docs.mvp-scope",
+      "title": "MVP Scope",
+      "source_path": "docs/mvp-scope.md",
+      "okf_path": "docs/.okf/mvp-scope.okf.json",
+      "sha256": "1770b340bb4a4cefd5f70ed80f5de6425f77713b3b49b466607da5bdfbb32200"
+    },
+    {
+      "id": "betterhackdays.docs.prep-checklist",
+      "title": "Prep Checklist",
+      "source_path": "docs/prep-checklist.md",
+      "okf_path": "docs/.okf/prep-checklist.okf.json",
+      "sha256": "0517827b560abdf2916d712535a6c743784c64344cdd23912ac3154b15293d22"
+    },
+    {
+      "id": "betterhackdays.docs.process-timeline",
+      "title": "Process Timeline",
+      "source_path": "docs/process-timeline.md",
+      "okf_path": "docs/.okf/process-timeline.okf.json",
+      "sha256": "ef987b5420b829ab3d76e14635ab84a762996eaaef0770af54d6fccead73c8eb"
+    },
+    {
+      "id": "betterhackdays.docs.product-vision",
+      "title": "Product Vision",
+      "source_path": "docs/product-vision.md",
+      "okf_path": "docs/.okf/product-vision.okf.json",
+      "sha256": "151b2b3d018c2a9607ad09530e95ffd97df87c9f061e3ebfebcbb18468875d1c"
+    },
+    {
+      "id": "betterhackdays.docs.slug-resolution-model",
+      "title": "Slug Resolution Model",
+      "source_path": "docs/slug-resolution-model.md",
+      "okf_path": "docs/.okf/slug-resolution-model.okf.json",
+      "sha256": "6b2ba13c32d3ca2863d987a49533527e1486b39722c2056643ef2c20803728bb"
+    },
+    {
+      "id": "betterhackdays.docs.team-formation-and-collaboration-rfc",
+      "title": "Team Formation and Collaboration RFC",
+      "source_path": "docs/team-formation-and-collaboration-rfc.md",
+      "okf_path": "docs/.okf/team-formation-and-collaboration-rfc.okf.json",
+      "sha256": "b25bf48b382141201efaabcdc81ebf9fbb18f0e85f2ef3ee9fc1bc27ca48125f"
+    }
+  ]
+}

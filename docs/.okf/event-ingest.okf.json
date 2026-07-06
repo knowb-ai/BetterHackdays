@@ -1,0 +1,23 @@
+{
+  "okf_version": "google-open-knowledge-format/v1",
+  "kind": "knowledge_document",
+  "id": "betterhackdays.docs.event-ingest",
+  "title": "Event Ingest",
+  "source": {
+    "path": "docs/event-ingest.md",
+    "media_type": "text/markdown; charset=utf-8",
+    "sha256": "dd0ab9835ef67d1ea985e73023e3f894b4c8ed632d3508209a870726fc5e6853"
+  },
+  "content": {
+    "mode": "external_reference",
+    "path": "docs/event-ingest.md",
+    "preserve_source_bytes": true
+  },
+  "relationships": [],
+  "compatibility": {
+    "machine_readable": true,
+    "lossless_conversion": true,
+    "content_mutation": "none",
+    "extension_policy": "additive"
+  }
+}

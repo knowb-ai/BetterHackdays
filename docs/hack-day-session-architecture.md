@@ -50,12 +50,16 @@ A live work session for one hackathon, hack day, or event.
 A Hack Day has:
 
 - public endpoint
+- public or organizer-issued Hack Day code
 - event context
 - active participants
 - matchable participants
 - matchmaking state
 - team rooms
 - optional GitHub workspace setup
+
+Slug and room-keyword resolution is defined in
+[Slug Resolution Model](./slug-resolution-model.md).
 
 ### Active participant
 

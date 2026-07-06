@@ -49,6 +49,9 @@ The repo is currently centered on the BetterHackdays matchmaking backend, with a
 - Read the smallest set of relevant files first.
 - Make the minimum change needed for the task.
 - Keep docs aligned with the actual repo state.
+- Keep governed knowledge files aligned with the repo OKF contract in `.okf/manifest.json`.
+- When changing `README.md`, `agents.md`, or `docs/*.md`, update the matching OKF sidecar checksums.
+- Run `python scripts/validate_okf.py` before handoff when governed knowledge files change.
 - Verify the result before handing off.
 
 ## Writing rules
@@ -61,4 +64,3 @@ The repo is currently centered on the BetterHackdays matchmaking backend, with a
 ## Handoff note
 
 If an agent changes behavior, workflow, or repo expectations, update this file in the same change so the next contributor has one source of truth.
-

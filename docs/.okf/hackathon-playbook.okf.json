@@ -1,0 +1,23 @@
+{
+  "okf_version": "google-open-knowledge-format/v1",
+  "kind": "knowledge_document",
+  "id": "betterhackdays.docs.hackathon-playbook",
+  "title": "Hackathon Playbook",
+  "source": {
+    "path": "docs/hackathon-playbook.md",
+    "media_type": "text/markdown; charset=utf-8",
+    "sha256": "c0497cfd74558474504ff05db3a3d2bb6caf950907715174ef33418e54e1722a"
+  },
+  "content": {
+    "mode": "external_reference",
+    "path": "docs/hackathon-playbook.md",
+    "preserve_source_bytes": true
+  },
+  "relationships": [],
+  "compatibility": {
+    "machine_readable": true,
+    "lossless_conversion": true,
+    "content_mutation": "none",
+    "extension_policy": "additive"
+  }
+}

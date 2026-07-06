@@ -1,0 +1,23 @@
+{
+  "okf_version": "google-open-knowledge-format/v1",
+  "kind": "knowledge_document",
+  "id": "betterhackdays.repo.README",
+  "title": "BetterHackdays - Hack Day Matchmaking Backend",
+  "source": {
+    "path": "README.md",
+    "media_type": "text/markdown; charset=utf-8",
+    "sha256": "8cefa5d642290bbcf3ecd669827ebee616d1e1ee0bbf94ee51a88298fe9da9a8"
+  },
+  "content": {
+    "mode": "external_reference",
+    "path": "README.md",
+    "preserve_source_bytes": true
+  },
+  "relationships": [],
+  "compatibility": {
+    "machine_readable": true,
+    "lossless_conversion": true,
+    "content_mutation": "none",
+    "extension_policy": "additive"
+  }
+}

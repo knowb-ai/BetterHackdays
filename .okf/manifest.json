@@ -19,7 +19,7 @@
   "documents": [
     {
       "id": "betterhackdays.repo.README",
-      "title": "BetterHackdays",
+      "title": "BetterHackdays - Hack Day Matchmaking Backend",
       "source_path": "README.md",
       "okf_path": ".okf/README.okf.json",
       "sha256": "8cefa5d642290bbcf3ecd669827ebee616d1e1ee0bbf94ee51a88298fe9da9a8"
@@ -36,7 +36,7 @@
       "title": "BetterHackdays Docs",
       "source_path": "docs/README.md",
       "okf_path": "docs/.okf/README.okf.json",
-      "sha256": "c041a21b32bd4bf4114058a8328842091ba63f7c8fb1c84f0e472b48d9a633ce"
+      "sha256": "b7ce2dd8be34ea8bdfe4e96ca26bec8e55a3c8029845139d9c525618e2223df3"
     },
     {
       "id": "betterhackdays.docs.event-ingest-schema",
@@ -57,7 +57,7 @@
       "title": "Hack Day Session Architecture",
       "source_path": "docs/hack-day-session-architecture.md",
       "okf_path": "docs/.okf/hack-day-session-architecture.okf.json",
-      "sha256": "fee61bf1d24b6ce019cf4d2ff9fcbe324d9f84304efecf0da8bf8b977f84a7ee"
+      "sha256": "61e73beaf54bd96115ecd3f6b0653344101d20fc5c3a2be01ae4e4ff612a51b3"
     },
     {
       "id": "betterhackdays.docs.hackathon-playbook",
@@ -100,6 +100,13 @@
       "source_path": "docs/product-vision.md",
       "okf_path": "docs/.okf/product-vision.okf.json",
       "sha256": "151b2b3d018c2a9607ad09530e95ffd97df87c9f061e3ebfebcbb18468875d1c"
+    },
+    {
+      "id": "betterhackdays.docs.slug-resolution-model",
+      "title": "Slug Resolution Model",
+      "source_path": "docs/slug-resolution-model.md",
+      "okf_path": "docs/.okf/slug-resolution-model.okf.json",
+      "sha256": "c7c2fdf17e256e6b14f0fe6db447b89ad52311ccd7a39f2c8b1dc9462a079e03"
     },
     {
       "id": "betterhackdays.docs.team-formation-and-collaboration-rfc",

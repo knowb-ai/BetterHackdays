@@ -2,7 +2,7 @@
   "okf_version": "google-open-knowledge-format/v1",
   "kind": "knowledge_document",
   "id": "betterhackdays.repo.README",
-  "title": "BetterHackdays",
+  "title": "BetterHackdays - Hack Day Matchmaking Backend",
   "source": {
     "path": "README.md",
     "media_type": "text/markdown; charset=utf-8",

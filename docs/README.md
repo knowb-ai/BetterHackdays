@@ -21,6 +21,7 @@ This folder is the working notebook for the product direction beyond pure matchm
 - [Event Ingest](./event-ingest.md)
 - [Event Ingest Schema](./event-ingest-schema.md)
 - [Team Formation and Collaboration RFC](./team-formation-and-collaboration-rfc.md)
+- [Slug Resolution Model](./slug-resolution-model.md)
 - [Idea Suggestions](./idea-suggestions.md)
 - [Process Timeline](./process-timeline.md)
 - [Prep Checklist](./prep-checklist.md)

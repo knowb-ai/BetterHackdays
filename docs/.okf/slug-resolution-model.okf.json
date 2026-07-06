@@ -1,16 +1,16 @@
 {
   "okf_version": "google-open-knowledge-format/v1",
   "kind": "knowledge_document",
-  "id": "betterhackdays.docs.README",
-  "title": "BetterHackdays Docs",
+  "id": "betterhackdays.docs.slug-resolution-model",
+  "title": "Slug Resolution Model",
   "source": {
-    "path": "docs/README.md",
+    "path": "docs/slug-resolution-model.md",
     "media_type": "text/markdown; charset=utf-8",
-    "sha256": "b7ce2dd8be34ea8bdfe4e96ca26bec8e55a3c8029845139d9c525618e2223df3"
+    "sha256": "c7c2fdf17e256e6b14f0fe6db447b89ad52311ccd7a39f2c8b1dc9462a079e03"
   },
   "content": {
     "mode": "external_reference",
-    "path": "docs/README.md",
+    "path": "docs/slug-resolution-model.md",
     "preserve_source_bytes": true
   },
   "relationships": [],

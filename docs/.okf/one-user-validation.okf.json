@@ -1,16 +1,16 @@
 {
   "okf_version": "google-open-knowledge-format/v1",
   "kind": "knowledge_document",
-  "id": "betterhackdays.docs.README",
-  "title": "BetterHackdays Docs",
+  "id": "betterhackdays.docs.one-user-validation",
+  "title": "One-User Validation",
   "source": {
-    "path": "docs/README.md",
+    "path": "docs/one-user-validation.md",
     "media_type": "text/markdown; charset=utf-8",
-    "sha256": "146a0af93be8ec850fe5410f6301ab03f4de6a8f62f7067c736b9bb4eeb63521"
+    "sha256": "1d1bb6e026dad642021f55a36d2b8a307cdbf53f31f572312fc875f15d05f214"
   },
   "content": {
     "mode": "external_reference",
-    "path": "docs/README.md",
+    "path": "docs/one-user-validation.md",
     "preserve_source_bytes": true
   },
   "relationships": [],

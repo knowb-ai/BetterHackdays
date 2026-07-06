@@ -1,41 +1,46 @@
-# BetterHackdays — Harness Matchmaking Backend
+# BetterHackdays - Hack Day Matchmaking Backend
 
-> Find your team. Spawn your workspace. Start building.
+> Join the Hack Day. Find your team. Start building.
 
-This is the first work package of **BetterHackdays**: a Daytona-native
-hackathon coordination system. It implements the **matchmaking layer** — a
-shared backend that lets coding harnesses (Warp, Claude Code, Cursor, Codex,
-etc.) connect, create an anonymous builder profile, browse anonymized match
-cards, and like/pass candidates to form mutual matches.
+BetterHackdays is a Hack Day matchmaking and prep system for coding agents,
+CLI users, and IDE harnesses. The current backend lets harnesses such as Warp,
+KiloCode, Claude Code, Cursor, Codex, and similar tools connect to a shared
+Hack Day, create an anonymous builder profile, browse anonymized match cards,
+and like or pass candidates to form mutual matches.
 
-This package does **not** provision team workspaces yet. That comes in the
-next work package, and it will use Daytona to spawn a private team sandbox
-only **after** a mutual match is confirmed.
+The product direction is a public MCP/API server, deployed on Render by
+default, that an organizer can wake up before a hackathon starts. Participants
+connect to that live Hack Day endpoint through a CLI or agent harness. Once
+their profile is complete, they become matchable for that Hack Day.
 
-## Why Daytona
+Team workspace setup is not fully automated yet. The intended direction is a
+post-match team room with explicit GitHub permission before a shared repository
+is created or attached.
 
-BetterHackdays is **Daytona-native**. The matchmaking server itself is
-designed to run inside one long-lived **Daytona Sandbox**. All harnesses
-connect to the same backend URL exposed by that sandbox — there is not one
-sandbox per builder.
+## Architecture Direction
 
-**Architecture note:** _The matchmaking server runs in a Daytona Sandbox.
-Team workspaces are not created per user. They are created only after mutual
-matches, in a later package._
+BetterHackdays should be provider-neutral at the product layer. Render is the
+default target for the public server. Other providers can be integrations, but
+they should not define the product model.
 
 ```
-Harness / IDE / Agent Client
+Coding Agent / CLI / IDE Harness
         ↓
-Shared BetterHackdays MCP/API Server
+BetterHackdays CLI or MCP Client
         ↓
-Long-lived Daytona Sandbox
+Public BetterHackdays MCP/API Server
         ↓
-SQLite / File DB
+Render-hosted Backend
         ↓
-Anonymous Builder Registry
+Hack Day Session State
         ↓
-Matchmaking Engine
+Participants, Profiles, Matchmaking, Rooms
+        ↓
+GitHub Repo and Workspace Setup
 ```
+
+See [Hack Day Session Architecture](./docs/hack-day-session-architecture.md)
+for the current product model.
 
 ## Stack
 
@@ -45,7 +50,8 @@ Matchmaking Engine
 - Pydantic v2
 - Uvicorn
 
-No auth. No UI. No LLM matching. No Daytona SDK provisioning in this package.
+No production auth yet. No UI. No LLM matching. No automatic GitHub repo
+creation without explicit permission.
 
 ## Project structure
 
@@ -53,7 +59,7 @@ betterhackdays/
 ├── README.md
 ├── requirements.txt
 ├── .env.example
-├── app/                # backend (runs inside Daytona Sandbox)
+├── app/                # backend API and planning logic
 │   ├── __init__.py
 │   ├── main.py          # FastAPI routes (thin)
 │   ├── db.py            # SQLite schema + connection helpers
@@ -66,7 +72,7 @@ betterhackdays/
 │   ├── __init__.py      # derives harness_id from git email, calls backend
 │   └── __main__.py      # CLI: `python -m client connect | cards | like ...`
 └── scripts/
-    └── deploy_ssh.sh    # one-shot deploy into a Daytona Sandbox via SSH
+    └── deploy_ssh.sh    # legacy prototype deploy helper
 ```
 
 ## How to run locally
@@ -87,21 +93,19 @@ Interactive docs: http://localhost:8000/docs
 .venv/bin/python -m unittest discover -s tests
 ```
 
-## Running inside Daytona Sandbox
+## Render-hosted Hack Day Server
 
-This service is intended to run inside **one long-lived Daytona Sandbox**.
+The intended live shape is one public server for a Hack Day.
 
-- Create a single Daytona Sandbox and run the FastAPI server inside it
-  (`uvicorn app.main:app --host 0.0.0.0 --port 8000`).
-- The sandbox exposes the FastAPI service on a stable URL.
-- **All harnesses connect to the same backend URL** — there is one shared
-  matchmaking server, not one sandbox per builder.
-- Every builder is identified by a `harness_id`. Seeded spoof users also use
-  fake `harness_id` values (e.g. `harness_backend_002`).
-- Future team provisioning will use Daytona to create private team sandboxes
-  **only after a mutual match**.
+- The organizer creates or wakes the Hack Day server before the event starts.
+- The server exposes a public MCP/API endpoint.
+- All harnesses connect to the same Hack Day endpoint.
+- A connect request makes the harness an active participant.
+- Completing the Socratic profile moves the participant into matchmaking.
+- A mutual like creates a match and should lead into team-room setup.
+- GitHub repo setup should happen only after explicit permission.
 
-Example inside a Sandbox:
+Example local server command before deploying to Render:
 
 ```bash
 python3 -m venv .venv
@@ -119,6 +123,9 @@ SEED_PROFILES=true .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 | POST   | `/survey/answer`           | Record one answer, update profile, return next Q + matches on finish |
 | GET    | `/survey/state`            | Peek at current survey progress without advancing   |
 | POST   | `/event/ingest/text`       | Normalize pasted hackathon text into event context   |
+| POST   | `/planner/ideas`           | Rank concise idea suggestions by event and team fit |
+| POST   | `/planner/timeline`        | Generate a deadline-aware Hack Day process timeline |
+| POST   | `/planner/checklist`       | Generate a concise Hack Day prep checklist          |
 | POST   | `/profile/update`          | Upsert profile fields (skills, role, vibe, etc.)    |
 | GET    | `/matchmaking/cards`       | Anonymized, scored, sorted candidate cards          |
 | POST   | `/matchmaking/like`        | Like a candidate; mutual like → match               |
@@ -163,19 +170,19 @@ The 8 questions cover: screener → event attendance → hardest part of finding
 teamates → how you find collaborators today → appeal (1-5) → where you'd use it
 → what builds trust → close + a name to call you.
 
-### Test the live service (1-day demo deployment)
+### Test a live Hack Day endpoint
 
-The backend is deployed in a Daytona Sandbox and kept alive for ~24h:
+Set `BASE` to the public Render URL for the active Hack Day server:
 
 ```
-BASE=https://8000-839f8b4c-960f-4a90-9b60-a431090a7dc6.proxy.daytona.work
+BASE=https://<betterhackdays-render-service>
 ```
 
-Run the full loop in one go — the harness id is derived automatically from
-your local `git config user.email` (SHA-256, never sent raw), so no login:
+Run the full loop in one go. The harness id can be derived automatically from
+your local `git config user.email` so the raw email is never sent:
 
 ```bash
-BASE="https://8000-839f8b4c-960f-4a90-9b60-a431090a7dc6.proxy.daytona.work"
+BASE="https://<betterhackdays-render-service>"
 HID="harness_$(printf 'betterhackdays:%s' "$(git config --get user.email)" | shasum -a 256 | cut -c1-12)"
 
 curl -s "$BASE/health"   # -> {"status":"ok"}
@@ -214,7 +221,7 @@ backend:
 Override identity with `$BETTERHACKDAYS_HARNESS_ID` if you need a fixed id.
 
 ```bash
-export BETTERHACKDAYS_BACKEND_URL=https://8000-<sandbox>.proxy.daytona.work
+export BETTERHACKDAYS_BACKEND_URL=https://<betterhackdays-render-service>
 
 python -m client whoami               # show derived harness_id
 python -m client connect              # auto-connect (no args)
@@ -236,7 +243,7 @@ like_profile("harness_backend_002")
 ## Example curl commands
 
 ```bash
-BASE=http://localhost:8000   # or the Daytona proxy URL above
+BASE=http://localhost:8000   # or the active Render Hack Day URL
 
 # Health
 curl "$BASE/health"
@@ -269,7 +276,7 @@ curl -X POST "$BASE/profile/update" \
     "interests":["developer tools","hackathon infra","agent workspaces"],
     "preferred_role":"product/infra",
     "project_vibe":"ship fast",
-    "looking_for":["frontend","backend","Daytona sandbox builder"],
+    "looking_for":["frontend","backend","GitHub workspace setup"],
     "availability":"full sprint"
   }'
 
@@ -302,14 +309,14 @@ curl "$BASE/matches?harness_id=warp_zubin_001"
 ## Seeded profiles
 
 On startup (when `SEED_PROFILES=true`), the backend seeds **10 anonymous
-builder profiles**. No real names, emails, or personal data — only fake
+builder profiles**. No real names, emails, or personal data. Only fake
 `harness_id` values and archetype labels covering the roles needed for a demo
 sprint:
 
 - frontend / demo builder
 - backend / API builder
 - AI agent builder
-- infra / sandbox builder
+- infra / platform builder
 - product / storytelling builder
 - design / pitch builder
 - data / RAG builder
@@ -344,27 +351,39 @@ purpose.
 
 ## Environment
 
-Copy `.env.example` to `.env` (optional — defaults work out of the box):
+Copy `.env.example` to `.env` (optional; defaults work out of the box):
 
 ```ini
 APP_NAME=betterhackdays-matchmaking
 DATABASE_URL=sqlite:///./betterhackdays.db
-RUNTIME_TARGET=daytona-sandbox
+RUNTIME_TARGET=render-hack-day
 SEED_PROFILES=true
 ```
 
 ## Known limitations
 
-- No authentication or identity — any `harness_id` is accepted.
+- No production authentication or identity yet. Any `harness_id` is accepted.
 - SQLite is single-file; fine for a demo, not for horizontal scale.
 - Matching is a tiny keyword heuristic, deliberately not LLM/embedding based.
 - No concurrency control beyond SQLite's default locking.
 - No persistence migrations; schema is created with `CREATE TABLE IF NOT EXISTS`.
 - Seeded profiles are static and not generated from real data.
+- Team rooms and GitHub repo setup are documented direction, not implemented.
 
-## Next work package: Daytona team workspace provisioning
+## Next work package: Hack Day sessions and team rooms
 
-This package only solves matchmaking. The next package will, after a mutual
-match, use the Daytona SDK to provision a **private team sandbox** (repo
-seeding, shared dev environment) for the matched pair/team — so that "find your
-team → spawn your workspace → start building" becomes the full loop.
+This package currently solves matchmaking, event ingest, and early planning
+helpers. The next architecture slice should introduce Hack Day session state:
+active participants, matchable participants, local/IP cluster hints, team rooms,
+and GitHub repo handoff after mutual match and explicit permission.
+
+The target loop is:
+
+```text
+join Hack Day
+complete profile
+match with teammate
+create team room
+approve GitHub setup
+start building in a shared repo
+```

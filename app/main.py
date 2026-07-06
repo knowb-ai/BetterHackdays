@@ -32,10 +32,16 @@ from .models import (
     EventIngestTextRequest,
     HarnessId,
     HealthResponse,
+    IdeaSuggestionsRequest,
+    IdeaSuggestionsResponse,
     MatchCard,
     MatchRecord,
     MatchesResponse,
     Profile,
+    PrepChecklistRequest,
+    PrepChecklistResponse,
+    ProcessTimelineRequest,
+    ProcessTimelineResponse,
     SwipeRequest,
     SwipeResponse,
     SurveyAnswerRequest,
@@ -136,6 +142,46 @@ def ingest_event_text(req: EventIngestTextRequest) -> EventIngestResponse:
         source_url=req.source_url,
     )
     return EventIngestResponse(**result)
+
+
+# --- planner ----------------------------------------------------------------
+
+
+@app.post("/planner/ideas", response_model=IdeaSuggestionsResponse)
+def planner_ideas(req: IdeaSuggestionsRequest) -> IdeaSuggestionsResponse:
+    result = mcp_tools.rank_idea_suggestions(
+        event=req.event.model_dump(),
+        profile=req.profile.model_dump() if req.profile else None,
+        team=[member.model_dump() for member in req.team],
+        topics=req.topics,
+    )
+    return IdeaSuggestionsResponse(**result)
+
+
+@app.post("/planner/timeline", response_model=ProcessTimelineResponse)
+def planner_timeline(req: ProcessTimelineRequest) -> ProcessTimelineResponse:
+    result = mcp_tools.generate_process_timeline(
+        event=req.event.model_dump(),
+        profile=req.profile.model_dump() if req.profile else None,
+        team=[member.model_dump() for member in req.team],
+        hack_day=req.hack_day.model_dump() if req.hack_day else None,
+        team_room=req.team_room.model_dump() if req.team_room else None,
+        workspace_repo=req.workspace_repo.model_dump() if req.workspace_repo else None,
+    )
+    return ProcessTimelineResponse(**result)
+
+
+@app.post("/planner/checklist", response_model=PrepChecklistResponse)
+def planner_checklist(req: PrepChecklistRequest) -> PrepChecklistResponse:
+    result = mcp_tools.generate_prep_checklist(
+        event=req.event.model_dump(),
+        profile=req.profile.model_dump() if req.profile else None,
+        team=[member.model_dump() for member in req.team],
+        hack_day=req.hack_day.model_dump() if req.hack_day else None,
+        team_room=req.team_room.model_dump() if req.team_room else None,
+        workspace_repo=req.workspace_repo.model_dump() if req.workspace_repo else None,
+    )
+    return PrepChecklistResponse(**result)
 
 
 # --- matchmaking cards -------------------------------------------------------

@@ -18,7 +18,7 @@ Turn a raw hackathon signup into a usable builder plan.
 
 - recommended idea directions
 - suggested team gaps
-- prep checklist
+- prep checklist, detailed in [Prep Checklist](./prep-checklist.md)
 - timeline with milestones
 - focus areas for the first hours
 - optional stretch guidance
@@ -34,4 +34,3 @@ Turn a raw hackathon signup into a usable builder plan.
 
 - This doc should stay implementation-agnostic.
 - Later we can split it into AI-assisted and rule-based sections.
-

@@ -233,6 +233,125 @@ class EventIngestResponse(BaseModel):
     next: str
 
 
+# --- Planner -----------------------------------------------------------------
+
+
+class IdeaSuggestion(BaseModel):
+    idea_type: Literal["safe_default", "ambitious", "niche", "fast_fallback"]
+    summary: str
+    why_it_fits: str
+    main_tradeoff: str
+    score: int
+    signals: list[str] = Field(default_factory=list)
+
+
+class IdeaSuggestionsRequest(BaseModel):
+    event: EventContext
+    profile: Optional[Profile] = None
+    team: list[Profile] = Field(default_factory=list)
+    topics: list[str] = Field(default_factory=list)
+
+
+class IdeaSuggestionsResponse(BaseModel):
+    status: str
+    ideas: list[IdeaSuggestion] = Field(default_factory=list)
+    ranking_signals: list[str] = Field(default_factory=list)
+    next: str
+
+
+class HackDayContext(BaseModel):
+    hack_day_id: Optional[str] = None
+    name: Optional[str] = None
+    state: Optional[Literal["active", "matchable", "matched", "team_room"]] = None
+    participant_state: Optional[Literal["active", "matchable", "matched"]] = None
+
+
+class TeamRoomContext(BaseModel):
+    room_id: Optional[str] = None
+    slug: Optional[str] = None
+    status: Optional[str] = None
+    selected_idea: Optional[str] = None
+
+
+class WorkspaceRepoContext(BaseModel):
+    owner: Optional[str] = None
+    repo: Optional[str] = None
+    default_branch: str = "main"
+    permission_status: Optional[str] = None
+    connected: bool = False
+
+
+class ProcessTimelineStage(BaseModel):
+    stage: Literal[
+        "before_event",
+        "first_30_minutes",
+        "first_2_hours",
+        "validation",
+        "demo_prep",
+        "final_submission",
+    ]
+    label: str
+    when: str
+    tasks: list[str] = Field(default_factory=list)
+    decision_checkpoint: str
+    risk_flags: list[str] = Field(default_factory=list)
+    optional_help: list[str] = Field(default_factory=list)
+    deadline: Optional[EventDeadline] = None
+
+
+class ProcessTimelineRequest(BaseModel):
+    event: EventContext
+    profile: Optional[Profile] = None
+    team: list[Profile] = Field(default_factory=list)
+    hack_day: Optional[HackDayContext] = None
+    team_room: Optional[TeamRoomContext] = None
+    workspace_repo: Optional[WorkspaceRepoContext] = None
+
+
+class ProcessTimelineResponse(BaseModel):
+    status: str
+    stages: list[ProcessTimelineStage] = Field(default_factory=list)
+    timeline_signals: list[str] = Field(default_factory=list)
+    missing_inputs: list[str] = Field(default_factory=list)
+    next: str
+
+
+class PrepChecklistItem(BaseModel):
+    task: str
+    why: str
+    done_hint: str
+    linked_doc: Optional[str] = None
+
+
+class PrepChecklistSection(BaseModel):
+    section: Literal[
+        "prep_tasks",
+        "first_hour_focus",
+        "missing_inputs",
+        "optional_help",
+        "workspace_next_steps",
+    ]
+    title: str
+    items: list[PrepChecklistItem] = Field(default_factory=list)
+
+
+class PrepChecklistRequest(BaseModel):
+    event: EventContext
+    profile: Optional[Profile] = None
+    team: list[Profile] = Field(default_factory=list)
+    hack_day: Optional[HackDayContext] = None
+    team_room: Optional[TeamRoomContext] = None
+    workspace_repo: Optional[WorkspaceRepoContext] = None
+
+
+class PrepChecklistResponse(BaseModel):
+    status: str
+    sections: list[PrepChecklistSection] = Field(default_factory=list)
+    checklist_signals: list[str] = Field(default_factory=list)
+    missing_inputs: list[str] = Field(default_factory=list)
+    next: str
+
+
 # --- Survey onboarding --------------------------------------------------------
 
 

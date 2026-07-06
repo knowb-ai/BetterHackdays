@@ -1,16 +1,16 @@
 {
   "okf_version": "google-open-knowledge-format/v1",
   "kind": "knowledge_document",
-  "id": "betterhackdays.docs.README",
-  "title": "BetterHackdays Docs",
+  "id": "betterhackdays.docs.mcp-server",
+  "title": "MCP Server",
   "source": {
-    "path": "docs/README.md",
+    "path": "docs/mcp-server.md",
     "media_type": "text/markdown; charset=utf-8",
-    "sha256": "04223c041eadf1e55b5c4951ff3e7e562521132c77b5f27be86c29ad7b8dc29c"
+    "sha256": "ac678f1a5d54d8ca921cfa0c93edb216b2f1044326feae637e0c89a621cdf00b"
   },
   "content": {
     "mode": "external_reference",
-    "path": "docs/README.md",
+    "path": "docs/mcp-server.md",
     "preserve_source_bytes": true
   },
   "relationships": [],

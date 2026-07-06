@@ -190,6 +190,27 @@ def get_matches(harness_id: str) -> dict[str, Any]:
     return {"matches": matchmaking.get_matches(harness_id)}
 
 
+def start_survey(harness_id: str) -> dict[str, Any]:
+    """Start or restart the onboarding survey for a harness."""
+    from . import survey
+
+    return survey.start_survey(harness_id)
+
+
+def answer_survey(harness_id: str, answer: str) -> dict[str, Any]:
+    """Record one survey answer and return the next survey state."""
+    from . import survey
+
+    return survey.answer_survey(harness_id, answer)
+
+
+def get_survey_state(harness_id: str) -> dict[str, Any]:
+    """Return current survey progress without advancing."""
+    from . import survey
+
+    return survey.survey_state(harness_id)
+
+
 def ingest_event_text(
     text: str,
     source_label: str = "Pasted event text",
@@ -279,6 +300,9 @@ MCP_TOOLS = {
     "like_profile": like_profile,
     "pass_profile": pass_profile,
     "get_matches": get_matches,
+    "start_survey": start_survey,
+    "answer_survey": answer_survey,
+    "get_survey_state": get_survey_state,
     "ingest_event_text": ingest_event_text,
     "rank_idea_suggestions": rank_idea_suggestions,
     "generate_process_timeline": generate_process_timeline,

@@ -108,6 +108,79 @@ surface.
 - Agent harness: loads the Hack Day or team-room context and asks permission
   before sharing contact details or repo metadata.
 
+## Prototype API
+
+`POST /slug/resolve`
+
+The request passes the raw code or phrase plus the candidate Hack Day state
+that the current prototype can search.
+
+```json
+{
+  "raw_input": "daytona pillow",
+  "caller_participant_id": "alice",
+  "hack_days": [
+    {
+      "hack_day_id": "hack_day_1",
+      "code": "daytona",
+      "name": "Daytona Hack Day",
+      "status": "active",
+      "participant_states": [
+        {"participant_id": "alice", "state": "workspace_connected"}
+      ],
+      "team_rooms": [
+        {
+          "room_id": "room_1",
+          "keyword": "pillow",
+          "join_mode": "invite_only",
+          "participant_ids": ["alice"],
+          "state": "workspace_connected",
+          "workspace_repo": {
+            "owner": "team-daytona",
+            "repo": "pillow",
+            "default_branch": "main",
+            "permission_status": "connected",
+            "allowed_write_targets": ["README.md", "docs/*.md"],
+            "last_synced_planning_snapshot": "2026-07-06T10:00:00Z"
+          }
+        }
+      ]
+    }
+  ],
+  "standalone_slugs": []
+}
+```
+
+Example response:
+
+```json
+{
+  "status": "resolved",
+  "input": "daytona pillow",
+  "normalized_tokens": ["daytona", "pillow"],
+  "target_type": "team_room",
+  "target_id": "room_1",
+  "hack_day_id": "hack_day_1",
+  "participant_state": "workspace_connected",
+  "room_state": "workspace_connected",
+  "safe_summary": "Team room: pillow",
+  "next": "open_workspace_repo",
+  "workspace_repo": {
+    "owner": "team-daytona",
+    "repo": "pillow",
+    "default_branch": "main",
+    "permission_status": "connected",
+    "allowed_write_targets": ["README.md", "docs/*.md"],
+    "last_synced_planning_snapshot": "2026-07-06T10:00:00Z"
+  },
+  "required_authorization": [],
+  "matches": []
+}
+```
+
+The same behavior is exposed through the MCP-friendly `resolve_slug` function
+in `app.mcp_tools`.
+
 ## Prototype data model
 
 ```text

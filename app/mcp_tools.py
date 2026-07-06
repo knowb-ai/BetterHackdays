@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from . import event_ingest, matchmaking, planner
+from . import event_ingest, matchmaking, planner, slug_resolution
 from .db import _dumps, _loads, _row_to_dict, get_conn
 
 
@@ -256,6 +256,21 @@ def generate_prep_checklist(
     )
 
 
+def resolve_slug(
+    raw_input: str,
+    hack_days: list[dict[str, Any]],
+    standalone_slugs: Optional[list[dict[str, Any]]] = None,
+    caller_participant_id: Optional[str] = None,
+) -> dict[str, Any]:
+    """Resolve a Hack Day code, standalone slug, or namespaced room keyword."""
+    return slug_resolution.resolve_slug(
+        raw_input,
+        hack_days=hack_days,
+        standalone_slugs=standalone_slugs,
+        caller_participant_id=caller_participant_id,
+    )
+
+
 # Registry for a future MCP server to enumerate and register these as tools.
 MCP_TOOLS = {
     "connect_harness": connect_harness,
@@ -268,4 +283,5 @@ MCP_TOOLS = {
     "rank_idea_suggestions": rank_idea_suggestions,
     "generate_process_timeline": generate_process_timeline,
     "generate_prep_checklist": generate_prep_checklist,
+    "resolve_slug": resolve_slug,
 }

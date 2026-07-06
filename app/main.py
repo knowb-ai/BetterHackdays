@@ -42,6 +42,8 @@ from .models import (
     PrepChecklistResponse,
     ProcessTimelineRequest,
     ProcessTimelineResponse,
+    SlugResolveRequest,
+    SlugResolveResponse,
     SwipeRequest,
     SwipeResponse,
     SurveyAnswerRequest,
@@ -182,6 +184,20 @@ def planner_checklist(req: PrepChecklistRequest) -> PrepChecklistResponse:
         workspace_repo=req.workspace_repo.model_dump() if req.workspace_repo else None,
     )
     return PrepChecklistResponse(**result)
+
+
+# --- slug resolution ---------------------------------------------------------
+
+
+@app.post("/slug/resolve", response_model=SlugResolveResponse)
+def slug_resolve(req: SlugResolveRequest) -> SlugResolveResponse:
+    result = mcp_tools.resolve_slug(
+        raw_input=req.raw_input,
+        hack_days=[hack_day.model_dump() for hack_day in req.hack_days],
+        standalone_slugs=[slug.model_dump() for slug in req.standalone_slugs],
+        caller_participant_id=req.caller_participant_id,
+    )
+    return SlugResolveResponse(**result)
 
 
 # --- matchmaking cards -------------------------------------------------------

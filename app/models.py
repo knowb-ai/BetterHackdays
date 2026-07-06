@@ -352,6 +352,78 @@ class PrepChecklistResponse(BaseModel):
     next: str
 
 
+# --- Slug resolution ---------------------------------------------------------
+
+
+class WorkspaceRepoResolutionRecord(BaseModel):
+    owner: str
+    repo: str
+    default_branch: str = "main"
+    permission_status: Optional[str] = None
+    allowed_write_targets: list[str] = Field(default_factory=list)
+    last_synced_planning_snapshot: Optional[str] = None
+
+
+class TeamRoomResolutionRecord(BaseModel):
+    room_id: str
+    keyword: str
+    join_mode: Literal["open", "approval", "invite_only"] = "open"
+    participant_ids: list[str] = Field(default_factory=list)
+    state: Literal["room_created", "workspace_connected"] = "room_created"
+    workspace_repo: Optional[WorkspaceRepoResolutionRecord] = None
+
+
+class ParticipantStateRecord(BaseModel):
+    participant_id: str
+    state: Literal[
+        "active",
+        "matchable",
+        "matched",
+        "room_created",
+        "workspace_connected",
+    ]
+
+
+class HackDayResolutionRecord(BaseModel):
+    hack_day_id: str
+    code: str
+    name: str
+    status: Literal["upcoming", "active", "ended"] = "active"
+    expires_at: Optional[str] = None
+    participant_states: list[ParticipantStateRecord] = Field(default_factory=list)
+    team_rooms: list[TeamRoomResolutionRecord] = Field(default_factory=list)
+
+
+class StandaloneSlugRecord(BaseModel):
+    slug: str
+    target_type: Literal["hack_day", "team_room"]
+    target_id: str
+    expires_at: Optional[str] = None
+
+
+class SlugResolveRequest(BaseModel):
+    raw_input: str = Field(..., min_length=1, max_length=160)
+    hack_days: list[HackDayResolutionRecord] = Field(default_factory=list)
+    standalone_slugs: list[StandaloneSlugRecord] = Field(default_factory=list)
+    caller_participant_id: Optional[str] = None
+
+
+class SlugResolveResponse(BaseModel):
+    status: Literal["resolved", "ambiguous", "not_found", "invalid"]
+    input: str
+    normalized_tokens: list[str] = Field(default_factory=list)
+    target_type: Optional[Literal["hack_day", "team_room"]] = None
+    target_id: Optional[str] = None
+    hack_day_id: Optional[str] = None
+    participant_state: Optional[str] = None
+    room_state: Optional[str] = None
+    safe_summary: str
+    next: str
+    workspace_repo: Optional[WorkspaceRepoResolutionRecord] = None
+    required_authorization: list[str] = Field(default_factory=list)
+    matches: list[str] = Field(default_factory=list)
+
+
 # --- Survey onboarding --------------------------------------------------------
 
 

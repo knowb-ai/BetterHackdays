@@ -237,6 +237,25 @@ def generate_process_timeline(
     )
 
 
+def generate_prep_checklist(
+    event: Any,
+    profile: Any = None,
+    team: Optional[list[Any]] = None,
+    hack_day: Any = None,
+    team_room: Any = None,
+    workspace_repo: Any = None,
+) -> dict[str, Any]:
+    """Return a concise actionable Hack Day prep checklist."""
+    return planner.generate_prep_checklist(
+        event,
+        profile=profile,
+        team=team,
+        hack_day=hack_day,
+        team_room=team_room,
+        workspace_repo=workspace_repo,
+    )
+
+
 # Registry for a future MCP server to enumerate and register these as tools.
 MCP_TOOLS = {
     "connect_harness": connect_harness,
@@ -248,4 +267,5 @@ MCP_TOOLS = {
     "ingest_event_text": ingest_event_text,
     "rank_idea_suggestions": rank_idea_suggestions,
     "generate_process_timeline": generate_process_timeline,
+    "generate_prep_checklist": generate_prep_checklist,
 }

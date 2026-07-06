@@ -23,4 +23,5 @@ This folder is the working notebook for the product direction beyond pure matchm
 - [Team Formation and Collaboration RFC](./team-formation-and-collaboration-rfc.md)
 - [Idea Suggestions](./idea-suggestions.md)
 - [Process Timeline](./process-timeline.md)
+- [Prep Checklist](./prep-checklist.md)
 - [MVP Scope](./mvp-scope.md)

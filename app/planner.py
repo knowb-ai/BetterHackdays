@@ -541,3 +541,268 @@ def generate_process_timeline(
         "missing_inputs": missing_inputs,
         "next": "review_timeline",
     }
+
+
+def _missing_checklist_inputs(
+    event: dict[str, Any],
+    profile_terms: dict[str, list[str]],
+    deadlines: list[dict[str, Any]],
+    state: str,
+    workspace_repo: dict[str, Any],
+) -> list[str]:
+    missing: list[str] = []
+    if not event.get("tracks"):
+        missing.append("tracks")
+    if not event.get("judging_criteria"):
+        missing.append("judging_criteria")
+    if not deadlines:
+        missing.append("deadlines")
+    elif not _has_dated_deadline(deadlines):
+        missing.append("deadline_due_at")
+    if not profile_terms["skills"]:
+        missing.append("profile_skills")
+    if state in {"team_room", "workspace_connected"} and not profile_terms["roles"]:
+        missing.append("team_roles")
+    if state == "team_room" and not _workspace_is_connected(workspace_repo):
+        missing.append("workspace_repo")
+    return missing
+
+
+def _item(
+    task: str,
+    why: str,
+    done_hint: str,
+    linked_doc: str | None = None,
+) -> dict[str, str | None]:
+    return {
+        "task": task,
+        "why": why,
+        "done_hint": done_hint,
+        "linked_doc": linked_doc,
+    }
+
+
+def _section(
+    section: str,
+    title: str,
+    items: list[dict[str, str | None]],
+) -> dict[str, Any]:
+    return {
+        "section": section,
+        "title": title,
+        "items": items,
+    }
+
+
+def _repo_label(workspace_repo: dict[str, Any]) -> str:
+    owner = _clean(workspace_repo.get("owner"))
+    repo = _clean(workspace_repo.get("repo")) or _clean(workspace_repo.get("name"))
+    if owner and repo:
+        return f"{owner}/{repo}"
+    return "the connected workspace repo"
+
+
+def _checklist_sections(
+    *,
+    event: dict[str, Any],
+    profile_terms: dict[str, list[str]],
+    deadlines: list[dict[str, Any]],
+    state: str,
+    missing_inputs: list[str],
+    workspace_repo: dict[str, Any],
+) -> list[dict[str, Any]]:
+    event_name = _clean(event.get("event_name")) or "this Hack Day"
+    final_deadline = _final_deadline(deadlines)
+    final_due = _clean(final_deadline.get("due_at")) if final_deadline else ""
+
+    prep_items = [
+        _item(
+            "Review the event context.",
+            "Rules, tracks, judging criteria, and submission requirements shape every later decision.",
+            "You can name the track, judging criteria, and final submission requirement.",
+            "docs/event-context.md",
+        ),
+        _item(
+            "Pick the next state transition.",
+            "The useful next action depends on whether you are active, matchable, matched, or in a team room.",
+            f"Current planning state is `{state}`.",
+            None,
+        ),
+    ]
+    if state == "active":
+        prep_items.append(_item(
+            "Finish the profile loop.",
+            "You should not enter matchmaking until the Hack Day profile has enough signal.",
+            "Profile answers include skills, interests, role, vibe, and what you need from teammates.",
+            None,
+        ))
+    elif state == "matchable":
+        prep_items.append(_item(
+            "Review match cards before committing to solo scope.",
+            "A strong teammate may change the best idea and first-hour plan.",
+            "You have liked, passed, or shortlisted the most relevant cards.",
+            None,
+        ))
+    elif state in {"team_room", "workspace_connected"}:
+        prep_items.append(_item(
+            "Lock one team direction.",
+            "Team rooms lose time when multiple project directions stay open too long.",
+            "The team has one idea, one demo promise, and one owner per workstream.",
+            "docs/idea.md",
+        ))
+
+    first_hour_items = [
+        _item(
+            "Define the smallest demoable slice.",
+            "The first hour should prove the project can become a working demo.",
+            "The team can describe the demo in one sentence.",
+            "docs/process-plan.md",
+        ),
+        _item(
+            "Assign build, story, and submission owners.",
+            "Clear ownership prevents silent gaps late in the sprint.",
+            "Every critical workstream has a named owner.",
+            "docs/team-profile.md",
+        ),
+    ]
+    if final_due:
+        first_hour_items.append(_item(
+            f"Work backward from final submission at {final_due}.",
+            "The deadline is the hard constraint for scope and demo prep.",
+            "The first-hour plan leaves time for demo prep and upload.",
+            "docs/submission.md",
+        ))
+
+    missing_items = [
+        _item(
+            f"Fill missing input: {missing.replace('_', ' ')}.",
+            "The checklist can still work, but this missing context can weaken planning quality.",
+            "The missing input is collected or explicitly ignored for this sprint.",
+            None,
+        )
+        for missing in missing_inputs
+    ] or [
+        _item(
+            "No obvious required inputs are missing.",
+            "The planner has enough context for a useful first pass.",
+            "Continue with execution instead of over-collecting data.",
+            None,
+        )
+    ]
+
+    optional_help_items = [
+        _item(
+            "Ask for a scope cut.",
+            "Fast fallback planning is useful when the first idea is too large.",
+            "You have a smaller version that can still demo well.",
+            None,
+        ),
+        _item(
+            "Ask for judging alignment.",
+            "A project can be technically good and still miss the judging rubric.",
+            "Each major feature maps to a judging criterion.",
+            "docs/event-context.md",
+        ),
+    ]
+
+    workspace_items: list[dict[str, str | None]]
+    if _workspace_is_connected(workspace_repo):
+        repo_label = _repo_label(workspace_repo)
+        workspace_items = [
+            _item(
+                f"Use {repo_label} as the source of truth.",
+                "The connected repo is the team-room MCP workspace target.",
+                "Team docs and code changes land in the connected repo.",
+                "README.md",
+            ),
+            _item(
+                "Keep agent instructions visible.",
+                "Coding agents need repo-local guidance instead of hidden server state.",
+                "`AGENTS.md` and `.betterhackdays/tooling.md` describe how agents should help.",
+                "AGENTS.md",
+            ),
+            _item(
+                "Update checklist and submission docs as decisions change.",
+                "Planning traces should be reviewable project state.",
+                "`docs/checklist.md` and `docs/submission.md` match the current plan.",
+                "docs/checklist.md",
+            ),
+        ]
+    else:
+        workspace_items = [
+            _item(
+                "Treat GitHub setup as permissioned and post-match.",
+                "The system should not pretend a workspace repo exists before approval.",
+                "A repo owner is chosen and GitHub setup is explicitly approved.",
+                None,
+            ),
+            _item(
+                "Do not put secrets or private contact details in repo docs.",
+                "Workspace files are durable project state and may be visible to teammates.",
+                "Only non-secret event, team, and planning context is written.",
+                None,
+            ),
+        ]
+
+    return [
+        _section("prep_tasks", f"Prep for {event_name}", prep_items),
+        _section("first_hour_focus", "First-hour focus", first_hour_items),
+        _section("missing_inputs", "Obvious missing inputs", missing_items),
+        _section("optional_help", "Optional help prompts", optional_help_items),
+        _section("workspace_next_steps", "Workspace next steps", workspace_items),
+    ]
+
+
+def generate_prep_checklist(
+    event: Any,
+    *,
+    profile: Any = None,
+    team: list[Any] | None = None,
+    hack_day: Any = None,
+    team_room: Any = None,
+    workspace_repo: Any = None,
+) -> dict[str, Any]:
+    """Generate the shortest useful Hack Day prep checklist."""
+    event_dict = _as_dict(event)
+    profile_dict = _as_dict(profile)
+    team_dicts = [_as_dict(member) for member in _as_list(team)]
+    hack_day_dict = _as_dict(hack_day)
+    team_room_dict = _as_dict(team_room)
+    workspace_repo_dict = _as_dict(workspace_repo)
+
+    deadlines = _deadline_lines(event_dict)
+    profile_signal_terms = _profile_terms(profile_dict, team_dicts)
+    state = _hack_day_state(hack_day_dict, team_room_dict, workspace_repo_dict)
+    missing_inputs = _missing_checklist_inputs(
+        event_dict,
+        profile_signal_terms,
+        deadlines,
+        state,
+        workspace_repo_dict,
+    )
+    sections = _checklist_sections(
+        event=event_dict,
+        profile_terms=profile_signal_terms,
+        deadlines=deadlines,
+        state=state,
+        missing_inputs=missing_inputs,
+        workspace_repo=workspace_repo_dict,
+    )
+
+    checklist_signals = ["hack_day_state:" + state]
+    if deadlines:
+        checklist_signals.append("event_deadlines")
+    if profile_signal_terms["skills"]:
+        checklist_signals.append("profile_or_team_skills")
+    if _workspace_is_connected(workspace_repo_dict):
+        checklist_signals.append("workspace_repo_connected")
+    if missing_inputs:
+        checklist_signals.append("missing_inputs")
+
+    return {
+        "status": "generated",
+        "sections": sections,
+        "checklist_signals": checklist_signals,
+        "missing_inputs": missing_inputs,
+        "next": "act_on_checklist",
+    }

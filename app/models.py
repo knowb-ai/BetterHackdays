@@ -316,6 +316,42 @@ class ProcessTimelineResponse(BaseModel):
     next: str
 
 
+class PrepChecklistItem(BaseModel):
+    task: str
+    why: str
+    done_hint: str
+    linked_doc: Optional[str] = None
+
+
+class PrepChecklistSection(BaseModel):
+    section: Literal[
+        "prep_tasks",
+        "first_hour_focus",
+        "missing_inputs",
+        "optional_help",
+        "workspace_next_steps",
+    ]
+    title: str
+    items: list[PrepChecklistItem] = Field(default_factory=list)
+
+
+class PrepChecklistRequest(BaseModel):
+    event: EventContext
+    profile: Optional[Profile] = None
+    team: list[Profile] = Field(default_factory=list)
+    hack_day: Optional[HackDayContext] = None
+    team_room: Optional[TeamRoomContext] = None
+    workspace_repo: Optional[WorkspaceRepoContext] = None
+
+
+class PrepChecklistResponse(BaseModel):
+    status: str
+    sections: list[PrepChecklistSection] = Field(default_factory=list)
+    checklist_signals: list[str] = Field(default_factory=list)
+    missing_inputs: list[str] = Field(default_factory=list)
+    next: str
+
+
 # --- Survey onboarding --------------------------------------------------------
 
 

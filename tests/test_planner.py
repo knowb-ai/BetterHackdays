@@ -4,6 +4,7 @@ import unittest
 
 from app import mcp_tools
 from app.main import (
+    planner_checklist as planner_checklist_route,
     planner_ideas as planner_ideas_route,
     planner_timeline as planner_timeline_route,
 )
@@ -11,6 +12,7 @@ from app.models import (
     EventContext,
     HackDayContext,
     IdeaSuggestionsRequest,
+    PrepChecklistRequest,
     ProcessTimelineRequest,
     Profile,
     TeamRoomContext,
@@ -244,6 +246,125 @@ class PlannerTest(unittest.TestCase):
         self.assertEqual(response.status, "generated")
         self.assertEqual(response.stages[-1].deadline.due_at, "2026-07-12 16:00")
         self.assertIn("workspace_repo_connected", response.timeline_signals)
+
+    def test_prep_checklist_active_participant_prompts_profile_completion(self) -> None:
+        result = mcp_tools.generate_prep_checklist(
+            EVENT_CONTEXT,
+            hack_day={"participant_state": "active"},
+        )
+
+        tasks = " ".join(
+            item["task"]
+            for section in result["sections"]
+            for item in section["items"]
+        )
+        self.assertIn("Finish the profile loop", tasks)
+        self.assertIn("hack_day_state:active", result["checklist_signals"])
+        self.assertIn("profile_skills", result["missing_inputs"])
+
+    def test_prep_checklist_matchable_participant_mentions_cards(self) -> None:
+        result = mcp_tools.generate_prep_checklist(
+            EVENT_CONTEXT,
+            profile=PROFILE,
+            hack_day={"participant_state": "matchable"},
+        )
+
+        tasks = " ".join(
+            item["task"]
+            for section in result["sections"]
+            for item in section["items"]
+        )
+        self.assertIn("Review match cards", tasks)
+        self.assertIn("profile_or_team_skills", result["checklist_signals"])
+        self.assertNotIn("profile_skills", result["missing_inputs"])
+
+    def test_prep_checklist_team_room_keeps_repo_permissioned_until_connected(self) -> None:
+        result = mcp_tools.generate_prep_checklist(
+            EVENT_CONTEXT,
+            profile=PROFILE,
+            team_room={"room_id": "room_123", "slug": "agent-sprint"},
+            workspace_repo={
+                "owner": "team-agent-sprint",
+                "repo": "betterhackdays-agent-sprint",
+                "connected": False,
+            },
+        )
+
+        tasks = " ".join(
+            item["task"]
+            for section in result["sections"]
+            for item in section["items"]
+        )
+        self.assertIn("permissioned", tasks)
+        self.assertIn("workspace_repo", result["missing_inputs"])
+        self.assertNotIn("workspace_repo_connected", result["checklist_signals"])
+
+    def test_prep_checklist_connected_workspace_references_repo_docs(self) -> None:
+        result = mcp_tools.generate_prep_checklist(
+            EVENT_CONTEXT,
+            profile=PROFILE,
+            team_room={"room_id": "room_123", "slug": "agent-sprint"},
+            workspace_repo={
+                "owner": "team-agent-sprint",
+                "repo": "betterhackdays-agent-sprint",
+                "connected": True,
+            },
+        )
+
+        linked_docs = {
+            item["linked_doc"]
+            for section in result["sections"]
+            for item in section["items"]
+            if item["linked_doc"]
+        }
+        tasks = " ".join(
+            item["task"]
+            for section in result["sections"]
+            for item in section["items"]
+        )
+        self.assertIn("team-agent-sprint/betterhackdays-agent-sprint", tasks)
+        self.assertIn("AGENTS.md", linked_docs)
+        self.assertIn("docs/checklist.md", linked_docs)
+        self.assertIn("workspace_repo_connected", result["checklist_signals"])
+
+    def test_prep_checklist_sparse_context_still_returns_actionable_sections(self) -> None:
+        result = mcp_tools.generate_prep_checklist(
+            {"event_name": "Tiny Hackathon", "confidence": "low"},
+        )
+
+        self.assertEqual(
+            [section["section"] for section in result["sections"]],
+            [
+                "prep_tasks",
+                "first_hour_focus",
+                "missing_inputs",
+                "optional_help",
+                "workspace_next_steps",
+            ],
+        )
+        self.assertIn("tracks", result["missing_inputs"])
+        self.assertIn("judging_criteria", result["missing_inputs"])
+        self.assertIn("missing_inputs", result["checklist_signals"])
+
+    def test_checklist_route_returns_typed_response_shape(self) -> None:
+        request = PrepChecklistRequest(
+            event=EventContext(**EVENT_CONTEXT),
+            profile=Profile(**PROFILE),
+            hack_day=HackDayContext(participant_state="matchable"),
+            team_room=TeamRoomContext(room_id="room_123", slug="agent-sprint"),
+            workspace_repo=WorkspaceRepoContext(
+                owner="team-agent-sprint",
+                repo="betterhackdays-agent-sprint",
+                connected=True,
+            ),
+        )
+
+        response = planner_checklist_route(request)
+
+        self.assertEqual(response.status, "generated")
+        self.assertEqual(response.next, "act_on_checklist")
+        self.assertIn("workspace_repo_connected", response.checklist_signals)
+        self.assertEqual(response.sections[0].section, "prep_tasks")
 
 
 if __name__ == "__main__":

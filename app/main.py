@@ -38,6 +38,8 @@ from .models import (
     MatchRecord,
     MatchesResponse,
     Profile,
+    PrepChecklistRequest,
+    PrepChecklistResponse,
     ProcessTimelineRequest,
     ProcessTimelineResponse,
     SwipeRequest,
@@ -167,6 +169,19 @@ def planner_timeline(req: ProcessTimelineRequest) -> ProcessTimelineResponse:
         workspace_repo=req.workspace_repo.model_dump() if req.workspace_repo else None,
     )
     return ProcessTimelineResponse(**result)
+
+
+@app.post("/planner/checklist", response_model=PrepChecklistResponse)
+def planner_checklist(req: PrepChecklistRequest) -> PrepChecklistResponse:
+    result = mcp_tools.generate_prep_checklist(
+        event=req.event.model_dump(),
+        profile=req.profile.model_dump() if req.profile else None,
+        team=[member.model_dump() for member in req.team],
+        hack_day=req.hack_day.model_dump() if req.hack_day else None,
+        team_room=req.team_room.model_dump() if req.team_room else None,
+        workspace_repo=req.workspace_repo.model_dump() if req.workspace_repo else None,
+    )
+    return PrepChecklistResponse(**result)
 
 
 # --- matchmaking cards -------------------------------------------------------

@@ -191,6 +191,41 @@ class PlannerTest(unittest.TestCase):
         self.assertIn("workspace_repo_connected", result["timeline_signals"])
         self.assertIn("hack_day_state:workspace_connected", result["timeline_signals"])
 
+    def test_process_timeline_does_not_assume_disconnected_repo_is_ready(self) -> None:
+        result = mcp_tools.generate_process_timeline(
+            EVENT_CONTEXT,
+            team_room={"room_id": "room_123", "slug": "agent-sprint"},
+            workspace_repo={
+                "owner": "team-agent-sprint",
+                "repo": "betterhackdays-agent-sprint",
+                "connected": False,
+            },
+        )
+
+        all_tasks = " ".join(
+            task
+            for stage in result["stages"]
+            for task in stage["tasks"]
+        )
+        self.assertIn("permissioned next step", all_tasks)
+        self.assertIn("hack_day_state:team_room", result["timeline_signals"])
+        self.assertNotIn("workspace_repo_connected", result["timeline_signals"])
+
+    def test_process_timeline_reports_deadline_without_due_date(self) -> None:
+        event = dict(EVENT_CONTEXT)
+        event["deadlines"] = [
+            {
+                "name": "Final submission",
+                "due_at": None,
+                "description": "Submit repo and demo video.",
+            }
+        ]
+
+        result = mcp_tools.generate_process_timeline(event)
+
+        self.assertIn("deadline_due_at", result["missing_inputs"])
+        self.assertIn("event_deadlines", result["timeline_signals"])
+
     def test_timeline_route_returns_typed_response_shape(self) -> None:
         request = ProcessTimelineRequest(
             event=EventContext(**EVENT_CONTEXT),

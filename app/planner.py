@@ -325,23 +325,38 @@ def _final_deadline(deadlines: list[dict[str, Any]]) -> dict[str, Any] | None:
     return deadlines[-1] if deadlines else None
 
 
+def _has_dated_deadline(deadlines: list[dict[str, Any]]) -> bool:
+    return any(_clean(deadline.get("due_at")) for deadline in deadlines)
+
+
+def _workspace_is_connected(workspace_repo: dict[str, Any]) -> bool:
+    if not workspace_repo:
+        return False
+    has_repo_identity = bool(
+        _clean(workspace_repo.get("repo"))
+        or _clean(workspace_repo.get("name"))
+        or _clean(workspace_repo.get("url"))
+    )
+    return workspace_repo.get("connected") is True and has_repo_identity
+
+
 def _hack_day_state(
     hack_day: dict[str, Any],
     team_room: dict[str, Any],
     workspace_repo: dict[str, Any],
 ) -> str:
-    if workspace_repo:
+    if _workspace_is_connected(workspace_repo):
         return "workspace_connected"
     if team_room:
         return "team_room"
     state = _clean(hack_day.get("participant_state") or hack_day.get("state")).lower()
-    if state in {"active", "matchable", "matched"}:
+    if state in {"active", "matchable", "matched", "team_room"}:
         return state
     return "event_only"
 
 
 def _workspace_tasks(workspace_repo: dict[str, Any]) -> list[str]:
-    if not workspace_repo:
+    if not _workspace_is_connected(workspace_repo):
         return ["Keep repo setup as a permissioned next step after the team agrees."]
     repo_name = _clean(workspace_repo.get("repo")) or _clean(workspace_repo.get("name"))
     repo_owner = _clean(workspace_repo.get("owner"))
@@ -488,6 +503,7 @@ def generate_process_timeline(
     workspace_repo_dict = _as_dict(workspace_repo)
 
     deadlines = _deadline_lines(event_dict)
+    has_dated_deadline = _has_dated_deadline(deadlines)
     state = _hack_day_state(hack_day_dict, team_room_dict, workspace_repo_dict)
     stages = _stage_templates(
         event=event_dict,
@@ -503,6 +519,8 @@ def generate_process_timeline(
         missing_inputs.append("ends_at")
     if not deadlines:
         missing_inputs.append("deadlines")
+    elif not has_dated_deadline:
+        missing_inputs.append("deadline_due_at")
     if not event_dict.get("judging_criteria"):
         missing_inputs.append("judging_criteria")
 
@@ -511,7 +529,7 @@ def generate_process_timeline(
         timeline_signals.append("event_deadlines")
     if state != "event_only":
         timeline_signals.append(f"hack_day_state:{state}")
-    if workspace_repo_dict:
+    if _workspace_is_connected(workspace_repo_dict):
         timeline_signals.append("workspace_repo_connected")
     if missing_inputs:
         timeline_signals.append("missing_inputs")

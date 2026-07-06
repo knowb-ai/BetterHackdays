@@ -3,8 +3,19 @@ from __future__ import annotations
 import unittest
 
 from app import mcp_tools
-from app.main import planner_ideas as planner_ideas_route
-from app.models import EventContext, IdeaSuggestionsRequest, Profile
+from app.main import (
+    planner_ideas as planner_ideas_route,
+    planner_timeline as planner_timeline_route,
+)
+from app.models import (
+    EventContext,
+    HackDayContext,
+    IdeaSuggestionsRequest,
+    ProcessTimelineRequest,
+    Profile,
+    TeamRoomContext,
+    WorkspaceRepoContext,
+)
 
 
 EVENT_CONTEXT = {
@@ -119,6 +130,85 @@ class PlannerTest(unittest.TestCase):
             "fast_fallback",
         }, True)
         self.assertIn("event_tracks", response.ranking_signals)
+
+    def test_process_timeline_returns_required_stages_and_deadline(self) -> None:
+        result = mcp_tools.generate_process_timeline(
+            EVENT_CONTEXT,
+            hack_day={"participant_state": "matchable"},
+        )
+
+        self.assertEqual(result["status"], "generated")
+        self.assertEqual(result["next"], "review_timeline")
+        self.assertEqual(
+            [stage["stage"] for stage in result["stages"]],
+            [
+                "before_event",
+                "first_30_minutes",
+                "first_2_hours",
+                "validation",
+                "demo_prep",
+                "final_submission",
+            ],
+        )
+        final_stage = result["stages"][-1]
+        self.assertEqual(final_stage["deadline"]["due_at"], "2026-07-12 16:00")
+        self.assertIn("event_deadlines", result["timeline_signals"])
+        self.assertIn("hack_day_state:matchable", result["timeline_signals"])
+
+    def test_process_timeline_reports_missing_deadline_context(self) -> None:
+        result = mcp_tools.generate_process_timeline(
+            {"event_name": "Tiny Hackathon", "confidence": "low"},
+        )
+
+        self.assertIn("deadlines", result["missing_inputs"])
+        self.assertIn("starts_at", result["missing_inputs"])
+        self.assertIn("missing_inputs", result["timeline_signals"])
+        final_stage = result["stages"][-1]
+        self.assertEqual(final_stage["when"], "At the published submission deadline")
+        self.assertIsNone(final_stage.get("deadline"))
+
+    def test_process_timeline_adds_workspace_repo_tasks_for_team_room(self) -> None:
+        result = mcp_tools.generate_process_timeline(
+            EVENT_CONTEXT,
+            team_room={"room_id": "room_123", "slug": "agent-sprint"},
+            workspace_repo={
+                "owner": "team-agent-sprint",
+                "repo": "betterhackdays-agent-sprint",
+                "default_branch": "main",
+                "connected": True,
+            },
+        )
+
+        all_tasks = " ".join(
+            task
+            for stage in result["stages"]
+            for task in stage["tasks"]
+        )
+        self.assertIn(
+            "team-agent-sprint/betterhackdays-agent-sprint",
+            all_tasks,
+        )
+        self.assertIn("workspace_repo_connected", result["timeline_signals"])
+        self.assertIn("hack_day_state:workspace_connected", result["timeline_signals"])
+
+    def test_timeline_route_returns_typed_response_shape(self) -> None:
+        request = ProcessTimelineRequest(
+            event=EventContext(**EVENT_CONTEXT),
+            profile=Profile(**PROFILE),
+            hack_day=HackDayContext(participant_state="matchable"),
+            team_room=TeamRoomContext(room_id="room_123", slug="agent-sprint"),
+            workspace_repo=WorkspaceRepoContext(
+                owner="team-agent-sprint",
+                repo="betterhackdays-agent-sprint",
+                connected=True,
+            ),
+        )
+
+        response = planner_timeline_route(request)
+
+        self.assertEqual(response.status, "generated")
+        self.assertEqual(response.stages[-1].deadline.due_at, "2026-07-12 16:00")
+        self.assertIn("workspace_repo_connected", response.timeline_signals)
 
 
 if __name__ == "__main__":

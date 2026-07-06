@@ -12,6 +12,15 @@ from typing import Any
 
 IDEA_TYPES = ("safe_default", "ambitious", "niche", "fast_fallback")
 
+TIMELINE_STAGES = (
+    "before_event",
+    "first_30_minutes",
+    "first_2_hours",
+    "validation",
+    "demo_prep",
+    "final_submission",
+)
+
 SKILL_ALIASES = {
     "frontend": ("ui", "ux", "demo", "interface", "web"),
     "react": ("ui", "ux", "demo", "interface", "web"),
@@ -43,6 +52,8 @@ def _as_list(value: Any) -> list[Any]:
 
 
 def _clean(value: Any) -> str:
+    if value is None:
+        return ""
     return re.sub(r"\s+", " ", str(value)).strip()
 
 
@@ -277,4 +288,238 @@ def rank_idea_suggestions(
         "ideas": ideas,
         "ranking_signals": ranking_signals,
         "next": "review_ideas",
+    }
+
+
+def _deadline_lines(event: dict[str, Any]) -> list[dict[str, Any]]:
+    deadlines: list[dict[str, Any]] = []
+    for item in _as_list(event.get("deadlines")):
+        if not isinstance(item, dict):
+            continue
+        name = _clean(item.get("name") or "Deadline")
+        due_at = _clean(item.get("due_at"))
+        description = _clean(item.get("description"))
+        deadlines.append({
+            "name": name,
+            "due_at": due_at or None,
+            "description": description or None,
+        })
+    submission = event.get("submission")
+    if isinstance(submission, dict) and submission.get("requirements") and not deadlines:
+        deadlines.append({
+            "name": "Final submission",
+            "due_at": None,
+            "description": "Submission requirements are known, but deadline is missing.",
+        })
+    return deadlines
+
+
+def _final_deadline(deadlines: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for deadline in deadlines:
+        searchable = " ".join([
+            _clean(deadline.get("name")),
+            _clean(deadline.get("description")),
+        ]).lower()
+        if any(token in searchable for token in ("final", "submission", "submit")):
+            return deadline
+    return deadlines[-1] if deadlines else None
+
+
+def _hack_day_state(
+    hack_day: dict[str, Any],
+    team_room: dict[str, Any],
+    workspace_repo: dict[str, Any],
+) -> str:
+    if workspace_repo:
+        return "workspace_connected"
+    if team_room:
+        return "team_room"
+    state = _clean(hack_day.get("participant_state") or hack_day.get("state")).lower()
+    if state in {"active", "matchable", "matched"}:
+        return state
+    return "event_only"
+
+
+def _workspace_tasks(workspace_repo: dict[str, Any]) -> list[str]:
+    if not workspace_repo:
+        return ["Keep repo setup as a permissioned next step after the team agrees."]
+    repo_name = _clean(workspace_repo.get("repo")) or _clean(workspace_repo.get("name"))
+    repo_owner = _clean(workspace_repo.get("owner"))
+    label = f"{repo_owner}/{repo_name}" if repo_owner and repo_name else "the connected repo"
+    return [
+        f"Use {label} as the shared source of truth.",
+        "Keep docs/process-plan.md and docs/checklist.md current as decisions change.",
+    ]
+
+
+def _stage_templates(
+    *,
+    event: dict[str, Any],
+    deadlines: list[dict[str, Any]],
+    hack_day_state: str,
+    workspace_repo: dict[str, Any],
+) -> list[dict[str, Any]]:
+    event_name = _clean(event.get("event_name")) or "the Hack Day"
+    starts_at = _clean(event.get("starts_at"))
+    ends_at = _clean(event.get("ends_at"))
+    final_deadline = _final_deadline(deadlines)
+    final_due = final_deadline.get("due_at") if final_deadline else None
+
+    before_tasks = [
+        f"Review {event_name} rules, tracks, judging criteria, and submission needs.",
+        "Confirm whether you are active, matchable, or already in a team room.",
+    ]
+    if hack_day_state == "active":
+        before_tasks.append("Finish the profile loop so you can enter matchmaking.")
+    elif hack_day_state == "matchable":
+        before_tasks.append("Review match cards and decide what team gaps matter most.")
+    elif hack_day_state in {"team_room", "workspace_connected"}:
+        before_tasks.append("Align the team on one idea, one owner per workstream, and one demo path.")
+
+    first_30_tasks = [
+        "Pick the smallest credible project direction and define the demo promise.",
+        "Assign roles for build, demo, pitch, and submission ownership.",
+    ]
+    if hack_day_state == "matchable":
+        first_30_tasks.insert(0, "Run a focused matchmaking pass before locking solo scope.")
+    if hack_day_state in {"team_room", "workspace_connected"}:
+        first_30_tasks.append("Write the idea and division of work into team-room notes.")
+
+    first_2_tasks = [
+        "Build a walking skeleton that proves the core workflow end to end.",
+        "Cut anything that does not improve judging fit or demo clarity.",
+    ]
+    first_2_tasks.extend(_workspace_tasks(workspace_repo))
+
+    validation_tasks = [
+        "Test the core flow with one realistic example.",
+        "Check the project against judging criteria and sponsor constraints.",
+        "Decide what to cut before demo prep starts.",
+    ]
+
+    demo_tasks = [
+        "Freeze the demo path and prepare fallback screenshots or sample data.",
+        "Write the 60 second story: problem, insight, build, impact.",
+        "Confirm repo, video, and summary requirements.",
+    ]
+    if final_due:
+        demo_tasks.append(f"Work backward from final submission: {final_due}.")
+
+    final_tasks = [
+        "Submit only polished, working artifacts.",
+        "Verify links, repo access, demo video, and project summary.",
+        "Keep a final fallback package ready in case deployment fails.",
+    ]
+
+    return [
+        {
+            "stage": "before_event",
+            "label": "Before the event",
+            "when": starts_at or "Before the Hack Day starts",
+            "tasks": before_tasks,
+            "decision_checkpoint": "Are you ready to become matchable or start team execution?",
+            "risk_flags": ["Missing event context can waste the first hour."],
+            "optional_help": ["Ask for missing rules, judging criteria, or team gaps."],
+        },
+        {
+            "stage": "first_30_minutes",
+            "label": "First 30 minutes",
+            "when": f"At kickoff: {starts_at}" if starts_at else "At kickoff",
+            "tasks": first_30_tasks,
+            "decision_checkpoint": "Can you explain the idea and demo in one sentence?",
+            "risk_flags": ["Too many ideas or unclear ownership will slow the team immediately."],
+            "optional_help": ["Ask for a scope cut or role split."],
+        },
+        {
+            "stage": "first_2_hours",
+            "label": "First 2 hours",
+            "when": "After kickoff, before deep build time",
+            "tasks": first_2_tasks,
+            "decision_checkpoint": "Does the core workflow run end to end?",
+            "risk_flags": ["Integrations and auth can consume the sprint if not boxed in early."],
+            "optional_help": ["Ask for a fallback implementation plan."],
+        },
+        {
+            "stage": "validation",
+            "label": "Validation checkpoint",
+            "when": "Before demo prep",
+            "tasks": validation_tasks,
+            "decision_checkpoint": "What must be cut so the demo is reliable?",
+            "risk_flags": ["A technically impressive build can still lose if the story is unclear."],
+            "optional_help": ["Ask for judging alignment or a risk review."],
+        },
+        {
+            "stage": "demo_prep",
+            "label": "Demo preparation",
+            "when": "Before final submission window",
+            "tasks": demo_tasks,
+            "decision_checkpoint": "Can someone else run the demo from the notes?",
+            "risk_flags": ["Unrehearsed demos and missing submission assets fail late."],
+            "optional_help": ["Ask for a pitch outline or demo script."],
+        },
+        {
+            "stage": "final_submission",
+            "label": "Final submission",
+            "when": final_due or ends_at or "At the published submission deadline",
+            "deadline": final_deadline,
+            "tasks": final_tasks,
+            "decision_checkpoint": "Are all required artifacts submitted and accessible?",
+            "risk_flags": ["Late uploads, private repos, and broken links are avoidable losses."],
+            "optional_help": ["Ask for a final submission checklist."],
+        },
+    ]
+
+
+def generate_process_timeline(
+    event: Any,
+    *,
+    profile: Any = None,
+    team: list[Any] | None = None,
+    hack_day: Any = None,
+    team_room: Any = None,
+    workspace_repo: Any = None,
+) -> dict[str, Any]:
+    """Generate a concise, deadline-aware Hack Day process timeline."""
+    event_dict = _as_dict(event)
+    _ = _as_dict(profile)
+    _ = [_as_dict(member) for member in _as_list(team)]
+    hack_day_dict = _as_dict(hack_day)
+    team_room_dict = _as_dict(team_room)
+    workspace_repo_dict = _as_dict(workspace_repo)
+
+    deadlines = _deadline_lines(event_dict)
+    state = _hack_day_state(hack_day_dict, team_room_dict, workspace_repo_dict)
+    stages = _stage_templates(
+        event=event_dict,
+        deadlines=deadlines,
+        hack_day_state=state,
+        workspace_repo=workspace_repo_dict,
+    )
+
+    missing_inputs: list[str] = []
+    if not event_dict.get("starts_at"):
+        missing_inputs.append("starts_at")
+    if not event_dict.get("ends_at"):
+        missing_inputs.append("ends_at")
+    if not deadlines:
+        missing_inputs.append("deadlines")
+    if not event_dict.get("judging_criteria"):
+        missing_inputs.append("judging_criteria")
+
+    timeline_signals = ["default_hack_day_stages"]
+    if deadlines:
+        timeline_signals.append("event_deadlines")
+    if state != "event_only":
+        timeline_signals.append(f"hack_day_state:{state}")
+    if workspace_repo_dict:
+        timeline_signals.append("workspace_repo_connected")
+    if missing_inputs:
+        timeline_signals.append("missing_inputs")
+
+    return {
+        "status": "generated",
+        "stages": stages,
+        "timeline_signals": timeline_signals,
+        "missing_inputs": missing_inputs,
+        "next": "review_timeline",
     }

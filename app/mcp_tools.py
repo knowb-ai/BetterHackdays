@@ -218,6 +218,25 @@ def rank_idea_suggestions(
     )
 
 
+def generate_process_timeline(
+    event: Any,
+    profile: Any = None,
+    team: Optional[list[Any]] = None,
+    hack_day: Any = None,
+    team_room: Any = None,
+    workspace_repo: Any = None,
+) -> dict[str, Any]:
+    """Return a concise deadline-aware Hack Day execution timeline."""
+    return planner.generate_process_timeline(
+        event,
+        profile=profile,
+        team=team,
+        hack_day=hack_day,
+        team_room=team_room,
+        workspace_repo=workspace_repo,
+    )
+
+
 # Registry for a future MCP server to enumerate and register these as tools.
 MCP_TOOLS = {
     "connect_harness": connect_harness,
@@ -228,4 +247,5 @@ MCP_TOOLS = {
     "get_matches": get_matches,
     "ingest_event_text": ingest_event_text,
     "rank_idea_suggestions": rank_idea_suggestions,
+    "generate_process_timeline": generate_process_timeline,
 }

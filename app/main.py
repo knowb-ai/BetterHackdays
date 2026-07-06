@@ -38,6 +38,8 @@ from .models import (
     MatchRecord,
     MatchesResponse,
     Profile,
+    ProcessTimelineRequest,
+    ProcessTimelineResponse,
     SwipeRequest,
     SwipeResponse,
     SurveyAnswerRequest,
@@ -152,6 +154,19 @@ def planner_ideas(req: IdeaSuggestionsRequest) -> IdeaSuggestionsResponse:
         topics=req.topics,
     )
     return IdeaSuggestionsResponse(**result)
+
+
+@app.post("/planner/timeline", response_model=ProcessTimelineResponse)
+def planner_timeline(req: ProcessTimelineRequest) -> ProcessTimelineResponse:
+    result = mcp_tools.generate_process_timeline(
+        event=req.event.model_dump(),
+        profile=req.profile.model_dump() if req.profile else None,
+        team=[member.model_dump() for member in req.team],
+        hack_day=req.hack_day.model_dump() if req.hack_day else None,
+        team_room=req.team_room.model_dump() if req.team_room else None,
+        workspace_repo=req.workspace_repo.model_dump() if req.workspace_repo else None,
+    )
+    return ProcessTimelineResponse(**result)
 
 
 # --- matchmaking cards -------------------------------------------------------

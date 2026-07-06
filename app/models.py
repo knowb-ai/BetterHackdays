@@ -259,6 +259,63 @@ class IdeaSuggestionsResponse(BaseModel):
     next: str
 
 
+class HackDayContext(BaseModel):
+    hack_day_id: Optional[str] = None
+    name: Optional[str] = None
+    state: Optional[Literal["active", "matchable", "matched", "team_room"]] = None
+    participant_state: Optional[Literal["active", "matchable", "matched"]] = None
+
+
+class TeamRoomContext(BaseModel):
+    room_id: Optional[str] = None
+    slug: Optional[str] = None
+    status: Optional[str] = None
+    selected_idea: Optional[str] = None
+
+
+class WorkspaceRepoContext(BaseModel):
+    owner: Optional[str] = None
+    repo: Optional[str] = None
+    default_branch: str = "main"
+    permission_status: Optional[str] = None
+    connected: bool = False
+
+
+class ProcessTimelineStage(BaseModel):
+    stage: Literal[
+        "before_event",
+        "first_30_minutes",
+        "first_2_hours",
+        "validation",
+        "demo_prep",
+        "final_submission",
+    ]
+    label: str
+    when: str
+    tasks: list[str] = Field(default_factory=list)
+    decision_checkpoint: str
+    risk_flags: list[str] = Field(default_factory=list)
+    optional_help: list[str] = Field(default_factory=list)
+    deadline: Optional[EventDeadline] = None
+
+
+class ProcessTimelineRequest(BaseModel):
+    event: EventContext
+    profile: Optional[Profile] = None
+    team: list[Profile] = Field(default_factory=list)
+    hack_day: Optional[HackDayContext] = None
+    team_room: Optional[TeamRoomContext] = None
+    workspace_repo: Optional[WorkspaceRepoContext] = None
+
+
+class ProcessTimelineResponse(BaseModel):
+    status: str
+    stages: list[ProcessTimelineStage] = Field(default_factory=list)
+    timeline_signals: list[str] = Field(default_factory=list)
+    missing_inputs: list[str] = Field(default_factory=list)
+    next: str
+
+
 # --- Survey onboarding --------------------------------------------------------
 
 

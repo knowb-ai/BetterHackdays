@@ -124,6 +124,7 @@ SEED_PROFILES=true .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 | GET    | `/survey/state`            | Peek at current survey progress without advancing   |
 | POST   | `/event/ingest/text`       | Normalize pasted hackathon text into event context   |
 | POST   | `/planner/ideas`           | Rank concise idea suggestions by event and team fit |
+| POST   | `/planner/timeline`        | Generate a deadline-aware Hack Day process timeline |
 | POST   | `/profile/update`          | Upsert profile fields (skills, role, vibe, etc.)    |
 | GET    | `/matchmaking/cards`       | Anonymized, scored, sorted candidate cards          |
 | POST   | `/matchmaking/like`        | Like a candidate; mutual like → match               |

@@ -1,16 +1,16 @@
 {
   "okf_version": "google-open-knowledge-format/v1",
   "kind": "knowledge_document",
-  "id": "betterhackdays.docs.README",
-  "title": "BetterHackdays Docs",
+  "id": "betterhackdays.docs.design-decision-hotmem-work-os",
+  "title": "Design Decision: HotMem-backed Work OS MCP",
   "source": {
-    "path": "docs/README.md",
+    "path": "docs/design-decision-hotmem-work-os.md",
     "media_type": "text/markdown; charset=utf-8",
-    "sha256": "63f1ae82a7c8aa0c4dabf7971b5aa7d8f68c0eb1bbebf5f695d60d536488c47f"
+    "sha256": "ea1b438d4858089aef713112f59a108b0e935d100ec805d155fd27759de6e2c1"
   },
   "content": {
     "mode": "external_reference",
-    "path": "docs/README.md",
+    "path": "docs/design-decision-hotmem-work-os.md",
     "preserve_source_bytes": true
   },
   "relationships": [],

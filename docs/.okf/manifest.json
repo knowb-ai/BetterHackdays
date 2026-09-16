@@ -15,7 +15,7 @@
       "title": "BetterHackdays Docs",
       "source_path": "docs/README.md",
       "okf_path": "docs/.okf/README.okf.json",
-      "sha256": "146a0af93be8ec850fe5410f6301ab03f4de6a8f62f7067c736b9bb4eeb63521"
+      "sha256": "63f1ae82a7c8aa0c4dabf7971b5aa7d8f68c0eb1bbebf5f695d60d536488c47f"
     },
     {
       "id": "betterhackdays.docs.development",
@@ -23,6 +23,13 @@
       "source_path": "docs/development.md",
       "okf_path": "docs/.okf/development.okf.json",
       "sha256": "6287037402db3f368c846355478388f1f4e6d7d49cb055e12e975f3829ccd1d8"
+    },
+    {
+      "id": "betterhackdays.docs.design-decision-hotmem-work-os",
+      "title": "Design Decision: HotMem-backed Work OS MCP",
+      "source_path": "docs/design-decision-hotmem-work-os.md",
+      "okf_path": "docs/.okf/design-decision-hotmem-work-os.okf.json",
+      "sha256": "ea1b438d4858089aef713112f59a108b0e935d100ec805d155fd27759de6e2c1"
     },
     {
       "id": "betterhackdays.docs.event-ingest-schema",

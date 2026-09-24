@@ -1,32 +1,37 @@
 # BetterHackdays Docs
 
-This folder is the working notebook for the product direction beyond pure matchmaking.
+This folder records the product direction and implementation plans for
+BetterHackdays.
 
-## Current focus
+## Current direction
 
-- Match builders who want to win, not just chat.
-- Run a live Hack Day session through a public MCP/API server.
-- Prepare people quickly, because hackathon time is the scarcest resource.
-- Give clear, concise instructions with optional deeper help.
-- Support both:
-  - people who arrive alone and want to prepare in advance
-  - people who already have a group and need to optimize execution
-- Hand matched participants into a team room and Git-backed workspace setup.
+- Connect coworkers and their agents through shared work sessions.
+- Use HotMem as each agent's private local digital brain.
+- Use GitHub as the only required external service for durable remote task
+  lists, dependencies, and updates.
+- Support optional peer discovery and direct sessions on a local WLAN.
+- Keep Hack Day matchmaking and planning as ways to find collaborators and
+  prepare work.
+- Treat session creation and shared memory operations as explicit MCP actions.
 
-## Suggested docs
+The collaboration pivot is accepted direction, not current implementation. The
+running MCP server still exposes the existing Hack Day matchmaking and planning
+tools.
+
+## Docs
 
 - [Product Vision](./product-vision.md)
-- [Hack Day Session Architecture](./hack-day-session-architecture.md)
+- [Work Session and Hack Day Architecture](./hack-day-session-architecture.md)
+- [HotMem Work OS MCP Decision](./design-decision-hotmem-work-os.md)
+- [MCP Server](./mcp-server.md)
+- [MVP Scope](./mvp-scope.md)
 - [Hackathon Playbook](./hackathon-playbook.md)
 - [Event Ingest](./event-ingest.md)
 - [Event Ingest Schema](./event-ingest-schema.md)
 - [Team Formation and Collaboration RFC](./team-formation-and-collaboration-rfc.md)
 - [Slug Resolution Model](./slug-resolution-model.md)
-- [MCP Server](./mcp-server.md)
-- [HotMem Work OS MCP Decision](./design-decision-hotmem-work-os.md)
 - [One-User Validation](./one-user-validation.md)
 - [Development](./development.md)
 - [Idea Suggestions](./idea-suggestions.md)
 - [Process Timeline](./process-timeline.md)
 - [Prep Checklist](./prep-checklist.md)
-- [MVP Scope](./mvp-scope.md)

@@ -2,23 +2,27 @@
 
 ## Purpose
 
-Expose the BetterHackdays function layer through a real MCP server entry point
-for a live Hack Day.
+BetterHackdays MCP is the local bridge between a coworker's agent, its local
+HotMem instance, session policy, and shared GitHub work. It creates and manages
+sessions, tasks, dependencies, updates, and explicit memory sharing.
 
-The REST API and MCP server share `app.mcp_tools` so behavior stays aligned.
-The FastAPI routes validate HTTP requests. The MCP server registers the same
-plain-Python functions as tools for coding agents and harnesses.
+The current server still exposes the Hack Day matchmaking and planning tool
+layer. Work-session creation, GitHub task coordination, HotMem sharing policy,
+peer discovery, and message relay are the accepted direction and are not yet
+implemented.
 
-## Entry Point
+## Current entry point
 
 ```bash
 .venv/bin/python -m app.mcp_server
 ```
 
-The module creates a `FastMCP` server named `betterhackdays-hack-day` and
-registers the current tool layer.
+The current module creates a `FastMCP` server named
+`betterhackdays-hack-day`. REST routes and MCP tools share `app.mcp_tools`.
+Run behavior and environment requirements are described in
+[Development](./development.md).
 
-## Registered Tools
+## Currently registered tools
 
 - `connect_harness`
 - `update_profile`
@@ -35,73 +39,66 @@ registers the current tool layer.
 - `generate_prep_checklist`
 - `resolve_slug`
 
-## Hack Day Connection Flow
+These tools support Hack Day onboarding, matchmaking, and planning. They do not
+create a shared work session or connect agents to GitHub or HotMem.
 
-1. The organizer creates or wakes the public Hack Day MCP/API service.
-2. A CLI, IDE, or coding agent harness connects to that endpoint.
-3. The harness calls `connect_harness` or `start_survey`.
-4. The participant answers survey questions through `answer_survey`.
-5. When the profile is complete, the participant becomes matchable.
-6. The harness calls match, planner, and slug tools as the event progresses.
+## Target session tools
 
-This flow keeps the product provider-neutral. Render can host the public
-service, but the MCP model should not depend on Render-specific assumptions.
+The first collaboration surface should include:
 
-## Render-Oriented Deployment
+- `session_create`, `session_get`, `session_join`, and `session_close`;
+- `session_inbox` and `session_post_update`;
+- `task_list`, `task_create`, `task_update`, and `task_complete`;
+- `task_add_dependency`, `task_remove_dependency`, and
+  `task_list_dependencies`;
+- `memory_share`, `memory_shared_search`, and `memory_revoke`;
+- optional `session_discover` for local WLAN discovery.
 
-The same application can expose REST and MCP entry points from one deployed
-service shape:
+In the GitHub-only path, `session_create` records the session in a shared
+repository. Tasks are GitHub issues, dependency relationships use GitHub's
+issue dependency feature, and comments provide durable updates and handoffs.
+Agents poll GitHub through `session_inbox`; delivery is asynchronous. GitHub
+Projects can provide a board view but are optional. The inbox relay delivers
+context when the receiving agent checks it; it does not wake or execute a
+remote agent.
 
-- REST: `uvicorn app.main:app`
-- MCP: `.venv/bin/python -m app.mcp_server`
+Each participant runs BetterHackdays MCP and HotMem locally and authorizes the
+server to access the shared repository. A BetterHackdays-hosted service,
+hosted HotMem, a separate database, or a message broker is not required for
+this path. GitHub identity and repository permissions authorize remote reads
+and writes. Use a private repository when session content is not intended to
+be public.
 
-Render deployment should set the same environment values for both entry
-points, especially `DATABASE_URL`, `APP_NAME`, and `SEED_PROFILES`.
+## Optional local discovery
 
-The MCP entry point initializes the SQLite schema before registering tools.
-Production deployment still needs durable database and auth decisions before
-public writes are enabled.
+On a shared WLAN, `session_discover` may find an advertised BetterHackdays
+session endpoint. A participant may also enter a reachable address and port.
+Discovery only locates the endpoint. The session still requires explicit
+membership approval and policy checks. Direct connections can provide
+lower-latency exchange when the endpoint is reachable; GitHub remains the
+durable remote relay when an agent is offline.
 
-## Workspace Repo Connector Model
+## HotMem boundary
 
-The main BetterHackdays MCP server owns Hack Day and team-room state. A
-connected GitHub workspace repo is the durable team drive for project state.
+HotMem stores and retrieves each agent's local memories. BetterHackdays checks
+session membership and sharing policy before it relays a selected memory or
+returns session context. The sender shares a useful derived item, not an
+unfiltered private brain. The receiver can explicitly save the received item
+into its own HotMem with the author, source, session, and timestamp preserved.
 
-The MCP-facing workspace repo connector model includes:
+Revocation blocks future reads through BetterHackdays. It cannot remove a copy
+already accepted into another agent's local memory, so tools must show the
+audience and sharing scope before a write.
 
-- owner
-- repo
-- default branch
-- permission status
-- allowed write targets
-- last synced planning snapshot
+## GitHub write policy
 
-Initial allowed write targets:
+GitHub owns durable task and discussion state in the GitHub-only mode.
+BetterHackdays tools should return issue links and structured status for every
+write. Mutations must be attributable to an authorized GitHub actor and
+reviewable by repository collaborators. The MCP layer must not write secrets,
+OAuth tokens, or private contact details to GitHub. It should avoid overwriting
+participant-authored files without drift checks.
 
-- `README.md`
-- `AGENTS.md`
-- `docs/event-context.md`
-- `docs/team-profile.md`
-- `docs/idea.md`
-- `docs/process-plan.md`
-- `docs/checklist.md`
-- `docs/submission.md`
-- `.betterhackdays/session.json`
-- `.betterhackdays/tooling.md`
-- `.betterhackdays/skills/`
-
-Future team-room MCP tools should be able to:
-
-- create or update planning docs
-- create starter code
-- add or update `AGENTS.md`
-- add tool manifests
-- add skill stubs
-- record decisions and traces
-- summarize current workspace state
-- prepare submission artifacts
-
-Repo writes must be explicit, reviewable project state. The MCP layer must not
-write secrets, OAuth tokens, or private contact details into workspace repos,
-and it should avoid overwriting participant-authored files without drift
-checks.
+Hack Day matchmaking remains an optional way to find collaborators and start
+a work session. The session, task, dependency, relay, and HotMem sharing tools
+also support coworkers who already know one another.

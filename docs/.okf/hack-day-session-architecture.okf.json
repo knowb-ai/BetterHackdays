@@ -2,11 +2,11 @@
   "okf_version": "google-open-knowledge-format/v1",
   "kind": "knowledge_document",
   "id": "betterhackdays.docs.hack-day-session-architecture",
-  "title": "Hack Day Session Architecture",
+  "title": "Work Session and Hack Day Architecture",
   "source": {
     "path": "docs/hack-day-session-architecture.md",
     "media_type": "text/markdown; charset=utf-8",
-    "sha256": "61e73beaf54bd96115ecd3f6b0653344101d20fc5c3a2be01ae4e4ff612a51b3"
+    "sha256": "6e1ec8775725335ac2c3a87e02c9084b0aaae2313a7861cf6e15332b22a0cc3b"
   },
   "content": {
     "mode": "external_reference",

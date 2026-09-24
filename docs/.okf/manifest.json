@@ -15,7 +15,7 @@
       "title": "BetterHackdays Docs",
       "source_path": "docs/README.md",
       "okf_path": "docs/.okf/README.okf.json",
-      "sha256": "8bd837d7cafa550b64230eb9abb61b2f870d44dec487b9a0f8144e1c878ae502"
+      "sha256": "c4d8e58383c8dbcd8ea8f35396d28106be4a23e24a4587dd4361ca2fa9774390"
     },
     {
       "id": "betterhackdays.docs.development",
@@ -29,7 +29,7 @@
       "title": "Design Decision: HotMem-backed Work OS MCP",
       "source_path": "docs/design-decision-hotmem-work-os.md",
       "okf_path": "docs/.okf/design-decision-hotmem-work-os.okf.json",
-      "sha256": "6e8989afaa1b81709c152457ef357acd52a3137ba3890a3020fc3af2f1e94f8c"
+      "sha256": "035433257cfa4eaad3c1175f41ea50f3aebbfb5d957d73ca77e58e338a62c2b8"
     },
     {
       "id": "betterhackdays.docs.event-ingest-schema",
@@ -50,7 +50,7 @@
       "title": "Work Session and Hack Day Architecture",
       "source_path": "docs/hack-day-session-architecture.md",
       "okf_path": "docs/.okf/hack-day-session-architecture.okf.json",
-      "sha256": "6e1ec8775725335ac2c3a87e02c9084b0aaae2313a7861cf6e15332b22a0cc3b"
+      "sha256": "518478f41baa399f88d916eaa173c8f4c5adf33cf8b2ab273b2e2ee408cc16db"
     },
     {
       "id": "betterhackdays.docs.hackathon-playbook",
@@ -71,14 +71,14 @@
       "title": "MCP Server",
       "source_path": "docs/mcp-server.md",
       "okf_path": "docs/.okf/mcp-server.okf.json",
-      "sha256": "8d22af48064d29b7cfe4b7dc7a8a8d39688f7d40b63a7031cd56e96587bdd23b"
+      "sha256": "6c82cc9dc06cf146cb1c11ce7aa27b28ff65447c8f64b3e6d885ae1201d68977"
     },
     {
       "id": "betterhackdays.docs.mvp-scope",
       "title": "MVP Scope",
       "source_path": "docs/mvp-scope.md",
       "okf_path": "docs/.okf/mvp-scope.okf.json",
-      "sha256": "bef1262e9e7fcf8e24fd3aca067c732ea51b20b6b7209de5e41d4c4d557214a0"
+      "sha256": "9e9141dd395695435890ff6dfdf80e5c25f1e840e92a2801a079965414cc0148"
     },
     {
       "id": "betterhackdays.docs.one-user-validation",
@@ -106,7 +106,7 @@
       "title": "Product Vision",
       "source_path": "docs/product-vision.md",
       "okf_path": "docs/.okf/product-vision.okf.json",
-      "sha256": "854063bfc4178846be9fb0ced68a19706f42a8c7d5139e6ef48724a50e5abea4"
+      "sha256": "74500ead7006d11c88a10db70ce1aba8147ee51bff1a6ce8ecbf3ba504b1c78e"
     },
     {
       "id": "betterhackdays.docs.slug-resolution-model",
@@ -120,7 +120,7 @@
       "title": "Team Formation and Collaboration RFC",
       "source_path": "docs/team-formation-and-collaboration-rfc.md",
       "okf_path": "docs/.okf/team-formation-and-collaboration-rfc.okf.json",
-      "sha256": "b25bf48b382141201efaabcdc81ebf9fbb18f0e85f2ef3ee9fc1bc27ca48125f"
+      "sha256": "9042d53e9aad67cca4ff5bca11664119e4b5180812ad4885aa8f92a3f7c3736c"
     }
   ]
 }

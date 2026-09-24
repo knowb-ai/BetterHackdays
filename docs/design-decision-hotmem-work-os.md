@@ -42,19 +42,27 @@ repository with its own authorized GitHub identity.
 
 In this mode:
 
-- a session is created through BetterHackdays MCP and recorded in the shared
-  repository as a session issue or equivalent reviewable session record;
-- shared tasks are GitHub issues, and native issue dependencies capture
-  blocked-by relationships;
+- a new project starts in a private repository owned by the initiating
+  coworker's personal GitHub account, with a private GitHub Project board;
+- the Project board is the team's primary work view, with status, owner,
+  priority, due date, and blocked state;
+- each task is a GitHub issue added to that Project, so the task has a durable
+  record and native issue dependency links can capture blocked-by relationships;
+- a session is created through BetterHackdays MCP and linked to the Project and
+  repository;
 - GitHub comments on the session and task issues carry attributed updates,
   decisions, and handoff notes;
-- agents poll or refresh the GitHub session inbox to receive updates, then
-  explicitly save useful received context into their local HotMem;
-- GitHub Projects may provide a board view, but the session still works with
-  issues alone;
+- agents poll or refresh the GitHub session inbox to receive updates;
+- HotMem retains local project memory, and checkpoint digests publish selected
+  project context to the Project and repository;
 - repo authorization and each actor's GitHub identity gate reads and writes;
-- repositories should be private when session contents are not intended to be
-  public.
+- before an issue-backed task becomes actionable, the owner's agent checks
+  the assigned named coworker's access and grants missing access under the
+  session owner's standing policy.
+
+An existing repository or Project may be selected instead of creating new
+ones. BetterHackdays must not change an existing resource's owner or visibility
+as a side effect of joining a session.
 
 This is durable asynchronous relay. It does not promise instant delivery: an
 agent sees a remote update when its MCP inbox next checks GitHub. The relay
@@ -77,7 +85,8 @@ cannot provide remote connectivity by itself.
 ## Shared work model
 
 GitHub holds durable, reviewable coordination state. HotMem holds each agent's
-local memory. BetterHackdays MCP connects them through explicit session tools:
+local project memory. BetterHackdays MCP connects them through explicit
+session tools:
 
 - create, inspect, join, and close a work session;
 - list, create, update, and complete session tasks;
@@ -86,10 +95,50 @@ local memory. BetterHackdays MCP connects them through explicit session tools:
 - promote a selected HotMem item into the session and save an authorized
   received item into local HotMem.
 
-The session and task tools must expose stable GitHub issue references, actor
-identity, timestamps, and provenance so agents can keep work and dependencies
-aligned. A task remains an issue; its dependency edges are represented using
-GitHub's issue dependency feature rather than hidden in private memory.
+The Project board is the shared work cockpit. Issues remain the canonical task
+records for discussion, ownership, and dependency links. Board fields and
+views organize those same issues by status, priority, owner, due date, and
+blocker state. The tools must return stable Project and issue references,
+actor identity, timestamps, and provenance.
+
+## Project memory and GitHub digests
+
+Each agent records useful project facts, decisions, constraints, lessons, and
+open questions in a local project-scoped HotMem namespace. Personal memories
+and raw agent conversations remain private. At task completion, a merged pull
+request, a session checkpoint, or session close, BetterHackdays can produce a
+concise digest from eligible project memories.
+
+The digest has distinct GitHub destinations:
+
+- Project status updates show the current summary, progress, blockers, and
+  next actions;
+- task issue comments record work specific to that task;
+- a repository project log preserves dated decisions, lessons, and links;
+- accepted coding practices live in `AGENTS.md` or a focused working-agreement
+  document;
+- code changes remain normal branches and pull requests with Git history.
+
+The session owner sets which project-memory categories may be published. Each
+digest includes source links, dates, and the publishing agent. It excludes
+private memories, raw transcripts, credentials, and unrelated personal
+context. A receiver may later ingest the published digest into its own local
+HotMem. BetterHackdays does not synchronize either agent's entire brain.
+
+## Repository practice loop
+
+When a repository is attached and when meaningful code or CI changes land, the
+agent reviews the repository's `AGENTS.md`, README, build and dependency files,
+formatters, linters, tests, CI workflows, and relevant merged pull requests.
+It builds an evidence-linked practice profile covering the architecture,
+commands, style, testing expectations, and contribution workflow.
+
+The agent uses that profile to plan and validate work, then checks whether
+reviews, CI results, and later changes confirm or contradict its assumptions.
+It labels observed rules separately from inferred conventions. Durable shared
+practice updates are proposed in `AGENTS.md` or a working-agreement document
+through a reviewable pull request; they do not silently rewrite the repository
+policy.
 
 ## Why this is the right boundary
 
@@ -190,6 +239,7 @@ Codex / Claude Code / other harness
         +------> BetterHackdays MCP
                     | session policy and task tools
                     +------> GitHub Issues / dependency links / comments
+                    +------> GitHub Project board / status updates
                     +------> optional WLAN session endpoint
 ```
 
@@ -222,6 +272,18 @@ operations:
 - `task_list_dependencies`
 - `session_post_update`
 - `session_inbox`
+- `project_create_or_get`
+- `project_board_update`
+- `project_status_publish`
+- `project_memory_capture`
+- `project_memory_digest_publish`
+- `project_memory_ingest`
+- `repo_practices_analyze`
+- `repo_practices_validate`
+- `repo_practices_propose`
+- `repo_access_check`
+- `repo_access_request`
+- `repo_access_grant_for_unblock`
 - `memory_private_add`
 - `memory_private_search`
 - `memory_share`
@@ -241,7 +303,11 @@ BetterHackdays owns the rules around a common task:
 
 - create, join, and close work sessions;
 - discover local peers and validate GitHub-backed participant authorization;
-- manage session task lists, dependency edges, and message relay;
+- create or reuse the private GitHub Project and repository for a session;
+- keep the Project board, issue tasks, and dependency links aligned;
+- manage session updates and the task-triggered coworker access flow;
+- digest eligible project memory to the Project and repository at checkpoints;
+- inspect, validate, and propose updates to repository working practices;
 - issue and validate session-scoped memory policy;
 - keep private and shared namespaces separate;
 - record promotion, access, revocation, and conflict events;
@@ -249,17 +315,39 @@ BetterHackdays owns the rules around a common task:
 - ensure workspace repo writes remain explicit, reviewable, and free of memory
   secrets or private participant data.
 
+For a new personal-account project, the owner authorizes BetterHackdays once
+to create private repositories and Projects and to invite specifically named
+session coworkers when they are assigned work that requires access. Before an
+issue-backed task becomes actionable, the repository owner's agent checks
+GitHub permissions and sends required invitations under the standing policy,
+without a per-invitation prompt. For an unexpected block, the coworker's agent
+can request access through a reachable BetterHackdays session endpoint; the
+request cannot rely on the private repository that the coworker cannot yet
+access. Both agents record the task, resources shared, permission level,
+request route, actor, and invitation result as an attributable entry on the
+GitHub session issue. The unblock notice contains only task-related blocker
+details, resource links, and invitation status. It does not stream private
+HotMem contents. The task remains pending until the coworker accepts the
+invitations and access is active. On a personal private repository,
+collaborator access lets the coworker read and push throughout the repository,
+including files unrelated to the assigned task. Project access is granted
+separately. The owner can review and revoke access. No admin role is granted,
+and GitHub invitations must be accepted before access works.
+
 HotMem owns local record storage, retrieval, provenance, portability, and
-snapshot or hydration mechanics. GitHub owns durable shared issues, dependency
-links, and comments in the GitHub-only mode. BetterHackdays controls which
-session participants may use that shared state. HotMem should not decide who
-is allowed into a BetterHackdays session.
+snapshot or hydration mechanics. GitHub owns the shared Project board, issues,
+dependency links, status updates, comments, and repository history in the
+GitHub-only mode. BetterHackdays controls which session participants may use
+that shared state. HotMem should not decide who is allowed into a
+BetterHackdays session.
 
 ## Non-goals for the first implementation
 
 - hosted or cloud-synchronized memory as the default;
 - a BetterHackdays-hosted coordination service as a requirement for the
   GitHub-only collaboration path;
+- streaming personal memory or conversation history to unblock a coworker;
+- autonomous changes to code practices without a reviewable repository change;
 - copying an entire private brain into a work session;
 - invisible prompt injection from shared session context;
 - automatic conflict-free multi-writer replication;
@@ -270,18 +358,20 @@ is allowed into a BetterHackdays session.
 
 ## Delivery sequence
 
-1. Define the GitHub session record, actor authorization, and issue-based task
-   contract, including dependency edges and update comments.
-2. Add `session_create` and session read/join/close MCP operations against a
-   test GitHub adapter.
-3. Add task, dependency, and inbox relay tools; verify two agents can converge
-   on the same task state by polling GitHub.
-4. Bind local HotMem instances to authorized session scopes and implement
-   explicit memory promotion and receipt.
-5. Add revocation, TTL, audit events, and redaction checks.
-6. Add optional WLAN discovery and direct session transport after the
-   GitHub-only path works end to end.
-7. Exercise the shared contract from Codex and Claude Code adapters.
+1. Define GitHub Project, private repository, session, issue-task, dependency,
+   memory digest, and access-policy contracts.
+2. Add session creation and read/join/close MCP operations, including private
+   Project and repository setup under the initiating personal account.
+3. Add Project board and issue-task tools, including dependency links and
+   inbox relay.
+4. Add the standing, session-scoped access rule that checks permissions and
+   grants the named coworker access before an assigned task becomes actionable.
+5. Bind local HotMem project memories to sessions and publish checkpoint
+   digests to GitHub under the configured sharing policy.
+6. Add repository practice analysis and reviewable working-agreement updates.
+7. Add revocation, expiry, audit events, and redaction checks.
+8. Add optional WLAN discovery and direct session transport.
+9. Exercise the shared contract from two agent harnesses.
 
 ## Open questions
 
@@ -294,8 +384,8 @@ is allowed into a BetterHackdays session.
   only close the entire session?
 - What is the smallest useful audit surface for a work session without turning
   the work OS into an administrative dashboard?
-- Should a GitHub session be represented by a labeled issue, a repository
-  manifest, or both?
+- Which permission scopes and GitHub authorization mechanism support private
+  personal repositories, user-level Projects, and invitations?
 - Which GitHub permissions are the minimum needed for session membership,
   task management, and dependency updates?
 - How should an agent be notified promptly while keeping polling as the only

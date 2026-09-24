@@ -7,8 +7,18 @@ BetterHackdays.
 
 - Connect coworkers and their agents through shared work sessions.
 - Use HotMem as each agent's private local digital brain.
-- Use GitHub as the only required external service for durable remote task
-  lists, dependencies, and updates.
+- Use a private GitHub Project board as the shared work view, backed by Issues
+  for tasks and dependencies.
+- Use GitHub as the only required external service for project digests, code,
+  and remote updates.
+- Learn repository practices from its instructions, configuration, CI, and
+  reviewed changes, then propose updates through pull requests.
+- Create new work under the initiating coworker's personal GitHub account in a
+  private repository by default.
+- Check named coworkers' access before their assigned tasks become actionable,
+  then grant missing access under a standing owner-approved session policy.
+  Send only task blocker details, resource links, and invitation status through
+  the unblock flow.
 - Support optional peer discovery and direct sessions on a local WLAN.
 - Keep Hack Day matchmaking and planning as ways to find collaborators and
   prepare work.

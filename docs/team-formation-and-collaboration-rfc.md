@@ -4,6 +4,13 @@ Status: Idea inventory / RFC draft
 
 Decision status: No product decisions made
 
+Current accepted scope: This RFC remains an exploratory inventory of the older
+Hack Day collaboration ideas. The current work OS decision and initial MVP
+scope are defined in [Product Vision](./product-vision.md), [Work Session and
+Hack Day Architecture](./hack-day-session-architecture.md), and
+[MVP Scope](./mvp-scope.md). Those documents govern the GitHub Project,
+HotMem digest, repository practice, and task-triggered access behavior.
+
 Purpose: Preserve, structure, and extend the original hackathon follow-up notes
 so the group can discuss scope, priority, feasibility, and product direction.
 

@@ -51,23 +51,32 @@ The first collaboration surface should include:
 - `task_list`, `task_create`, `task_update`, and `task_complete`;
 - `task_add_dependency`, `task_remove_dependency`, and
   `task_list_dependencies`;
+- `project_create_or_get`, `project_board_update`, and
+  `project_status_publish`;
+- `project_memory_capture`, `project_memory_digest_publish`, and
+  `project_memory_ingest`;
+- `repo_practices_analyze`, `repo_practices_validate`, and
+  `repo_practices_propose`;
+- `repo_access_check`, `repo_access_request`, and
+  `repo_access_grant_for_unblock`;
 - `memory_share`, `memory_shared_search`, and `memory_revoke`;
 - optional `session_discover` for local WLAN discovery.
 
-In the GitHub-only path, `session_create` records the session in a shared
-repository. Tasks are GitHub issues, dependency relationships use GitHub's
-issue dependency feature, and comments provide durable updates and handoffs.
-Agents poll GitHub through `session_inbox`; delivery is asynchronous. GitHub
-Projects can provide a board view but are optional. The inbox relay delivers
+In the GitHub-only path, `session_create` creates a private personal-account
+repository and private GitHub Project board for new work, or reuses the
+resources selected by the owner. The Project is the
+primary collaboration view; task cards are GitHub issues, which retain task
+details and discussion and hold native dependency links. Project status updates
+and issue comments carry digests and task-specific updates. Agents poll GitHub
+through `session_inbox`; delivery is asynchronous. The inbox relay delivers
 context when the receiving agent checks it; it does not wake or execute a
 remote agent.
 
 Each participant runs BetterHackdays MCP and HotMem locally and authorizes the
-server to access the shared repository. A BetterHackdays-hosted service,
+server to access the shared GitHub resources. A BetterHackdays-hosted service,
 hosted HotMem, a separate database, or a message broker is not required for
-this path. GitHub identity and repository permissions authorize remote reads
-and writes. Use a private repository when session content is not intended to
-be public.
+this path. GitHub identity and repository and Project permissions authorize
+remote reads and writes.
 
 ## Optional local discovery
 
@@ -89,6 +98,35 @@ into its own HotMem with the author, source, session, and timestamp preserved.
 Revocation blocks future reads through BetterHackdays. It cannot remove a copy
 already accepted into another agent's local memory, so tools must show the
 audience and sharing scope before a write.
+
+Project memory is captured locally in HotMem. At configured checkpoints,
+BetterHackdays publishes a concise, source-linked digest to Project status
+updates, task issue comments, and a dated repository log. Validated repository
+practices are proposed in `AGENTS.md` or a working-agreement file through a
+reviewable pull request. This does not publish raw HotMem records or private
+conversation history.
+
+## Task-triggered access
+
+During session creation, the repository owner can authorize a standing rule
+for specifically named coworkers. Before a task becomes actionable for an
+assigned coworker, the owner-side agent checks access and, under that rule,
+`repo_access_grant_for_unblock` sends the needed invitations without another
+owner prompt. If an unexpected block occurs while a session endpoint is
+reachable, the blocked coworker's agent sends a task-only
+`repo_access_request` through that endpoint. The request does not depend on
+access to the private repository that is causing the block. The owner-side
+agent verifies identity, task, missing permission, and standing policy before
+granting access. Only the blocker, needed resource links, and invitation
+status are relayed; private HotMem content is never part of the unblock
+message. The task remains pending until both invitations are accepted and
+access is active. No admin access is granted. On a personal-account
+private repository, collaborator access permits reading and pushing throughout
+the repository, including files unrelated to the assigned task. The Project
+has a separate access list. The GitHub session issue receives an attributable
+audit entry with the task, reason, resources, permission, request route, actor,
+and invitation outcome.
+Access remains after session close until revoked or its configured expiry.
 
 ## GitHub write policy
 

@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import base64
+import fnmatch
 import json
 import os
 import re
+import smtplib
 import urllib.error
 import urllib.parse
 import urllib.request
+from email.message import EmailMessage
 from typing import Any, Callable, Optional
 import uuid
 
@@ -657,11 +660,28 @@ def build_project_rfp_catalogue(
     `ascii-video-chat`,private/archived/unapproved-fork repos, and keeps
     `Faultline` and `Unlinked` connector-only with no repo metadata.
     """
-    raw_repos = (
-        repo_metadata if repo_metadata is not None else DEFAULT_PUBLIC_REPO_METADATA
-    )
-    resolve_readme = readme_fetcher or (
-        lambda name, branch: DEFAULT_PUBLIC_READMES.get(name)
+    raw_repos: list[dict[str, Any]]
+    metadata_source: str
+    if repo_metadata is not None:
+        raw_repos = repo_metadata
+        metadata_source = "caller_supplied"
+    else:
+        try:
+            live_repos = fetch_public_org_repos()
+            if not live_repos:
+                raise ValueError("no public repositories returned")
+            raw_repos = live_repos
+            metadata_source = "live_public_org_repos"
+        except Exception:
+            # Fall back to the approved baseline only when the live listing fails,
+            # and say so rather than pretending the catalogue is current.
+            raw_repos = list(DEFAULT_PUBLIC_REPO_METADATA)
+            metadata_source = "baseline_fallback_live_listing_unavailable"
+
+    resolve_readme: Callable[[str, str], Optional[str]] = (
+        readme_fetcher
+        if readme_fetcher is not None
+        else lambda name, branch: fetch_public_repo_readme(name, branch)
     )
 
     discovered_public_repos: dict[str, dict[str, Any]] = {}
@@ -886,6 +906,7 @@ def build_project_rfp_catalogue(
 
     return {
         "status": "ok",
+        "metadata_source": metadata_source,
         "taxonomy": {
             "project_rfp": "Active KnowB project RFP or live project brief.",
             "idea_suggestion": "Ideation-only concept from Cloud Builder Stack; not an active RFP or roadmap commitment.",
@@ -911,8 +932,16 @@ CANONICAL_IDEA_CATALOGUE_RAW_URL = (
     "https://raw.githubusercontent.com/knowb-ai/cloud-builder-stack/main/"
     "docs/fun-project-and-hackathon-ideas.md"
 )
+PUBLIC_SHOWCASE_INDEX_URL = (
+    "https://raw.githubusercontent.com/knowb-ai/knowb-ai.github.io/main/"
+    "templates/index.html"
+)
+DESIGN_RESOURCE_RAW_BASE = (
+    "https://raw.githubusercontent.com/knowb-ai/knowb-ai.github.io/main"
+)
 CLOUD_BUILDER_STACK_REVIEWER = "valiantone"
 CLOUD_BUILDER_STACK_ASSIGNEE = "valiantone"
+APPROVED_CODEOWNER_OWNERS = frozenset({"@valiantone"})
 
 KNOWB_ALIGNMENT_PILLARS: dict[str, tuple[str, ...]] = {
     "knowledge_agents": (
@@ -1017,6 +1046,44 @@ def fetch_canonical_idea_catalogue_markdown(*, timeout: float = 10.0) -> str:
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read().decode("utf-8")
+
+
+_SHOWCASE_TITLE_RE = re.compile(r'cabinet-title-lg">([^<]{2,120})</h3>')
+_SHOWCASE_CHIP_RE = re.compile(
+    r'<span class="chip[^"]*"><i class="led"[^>]*></i>\s*([^<]{2,80})\s*</span>'
+)
+
+
+def parse_public_showcase_html(html_text: str) -> list[dict[str, Any]]:
+    """Extract current public showcase entries (title plus tag chips) from knowb.run HTML."""
+    if not html_text or not isinstance(html_text, str):
+        return []
+
+    titles = list(_SHOWCASE_TITLE_RE.finditer(html_text))
+    entries: list[dict[str, Any]] = []
+    for index, match in enumerate(titles):
+        title = _clean_text(match.group(1))
+        if not title:
+            continue
+        segment_end = titles[index + 1].start() if index + 1 < len(titles) else len(html_text)
+        segment = html_text[match.end():segment_end]
+        tags = [
+            _clean_text(chip.group(1))
+            for chip in _SHOWCASE_CHIP_RE.finditer(segment)
+            if _clean_text(chip.group(1))
+        ]
+        entries.append({"title": title, "tags": tags})
+    return entries
+
+
+def fetch_public_showcase_entries(*, timeout: float = 10.0) -> list[dict[str, Any]]:
+    """Fetch the current public KnowB gallery/agent showcase from the live knowb.run source."""
+    req = urllib.request.Request(
+        PUBLIC_SHOWCASE_INDEX_URL,
+        headers={"User-Agent": "BetterHackdays-Connector/0.1"},
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return parse_public_showcase_html(resp.read().decode("utf-8"))
 
 
 def parse_idea_catalogue_markdown(markdown_text: str) -> list[dict[str, Any]]:
@@ -1218,8 +1285,9 @@ def qualify_idea(
     source_fetcher: Optional[Callable[[], str]] = None,
     repo_metadata: Optional[list[dict[str, Any]]] = None,
     readme_fetcher: Optional[Callable[[str, str], Optional[str]]] = None,
+    showcase_fetcher: Optional[Callable[[], list[dict[str, Any]]]] = None,
 ) -> dict[str, Any]:
-    """Deterministically qualify a candidate idea against the canonical catalogue, open public KnowB projects, and the public KnowB showcase."""
+    """Deterministically qualify a candidate idea against the canonical catalogue, open public KnowB projects, and the current public KnowB showcase."""
     clean_title = _clean_text(title)
     clean_summary = _clean_text(summary)
     clean_evidence = _clean_text(alignment_evidence)
@@ -1278,10 +1346,58 @@ def qualify_idea(
             "next": "provide_required_evidence",
         }
 
-    # 3. Build reference corpus:
+    # 3. Fetch the current public showcase, which supplies live alignment evidence
+    showcase_fetch = showcase_fetcher or fetch_public_showcase_entries
+    try:
+        showcase_entries = showcase_fetch()
+    except Exception as exc:
+        return {
+            "status": "showcase_unavailable",
+            "eligible": False,
+            "candidate": {"title": clean_title, "summary": clean_summary},
+            "overlap": {"is_duplicate": False, "matches": []},
+            "novelty": {
+                "is_novel": False,
+                "assessment": "Cannot verify alignment while the public KnowB showcase is unavailable.",
+            },
+            "alignment_evidence": {
+                "is_aligned": False,
+                "matched_pillars": [],
+                "matched_terms": [],
+                "matched_showcase_entries": [],
+                "submitted_evidence": clean_evidence,
+                "showcase_source": PUBLIC_SHOWCASE_INDEX_URL,
+            },
+            "reasons": ["showcase_unavailable"],
+            "error": str(exc),
+            "next": "retry_when_public_showcase_available",
+        }
+    if not isinstance(showcase_entries, list) or not showcase_entries:
+        return {
+            "status": "showcase_unavailable",
+            "eligible": False,
+            "candidate": {"title": clean_title, "summary": clean_summary},
+            "overlap": {"is_duplicate": False, "matches": []},
+            "novelty": {
+                "is_novel": False,
+                "assessment": "Cannot verify alignment while the public KnowB showcase is empty or unparseable.",
+            },
+            "alignment_evidence": {
+                "is_aligned": False,
+                "matched_pillars": [],
+                "matched_terms": [],
+                "matched_showcase_entries": [],
+                "submitted_evidence": clean_evidence,
+                "showcase_source": PUBLIC_SHOWCASE_INDEX_URL,
+            },
+            "reasons": ["showcase_unavailable"],
+            "next": "retry_when_public_showcase_available",
+        }
+
+    # 4. Build reference corpus:
     #    (a) Freshly fetched Cloud Builder Stack ideas
     #    (b) Current open public KnowB project set
-    #    (c) Public KnowB gallery/agent showcase
+    #    (c) Current public KnowB gallery/agent showcase
     project_catalogue = build_project_rfp_catalogue(
         repo_metadata=repo_metadata,
         readme_fetcher=readme_fetcher,
@@ -1309,6 +1425,19 @@ def qualify_idea(
                 "id": rfp["rfp_id"],
                 "title": rfp["title"],
                 "summary": f"{rfp['summary']} {rfp.get('scope', '')}",
+            }
+        )
+    for entry in showcase_entries:
+        entry_title = _clean_text(entry.get("title"))
+        if not entry_title:
+            continue
+        entry_tags = [str(tag) for tag in (entry.get("tags") or [])]
+        reference_items.append(
+            {
+                "source_set": "public_knowb_showcase",
+                "id": _slugify(entry_title),
+                "title": entry_title,
+                "summary": " ".join([entry_title, *entry_tags]),
             }
         )
 
@@ -1379,7 +1508,42 @@ def qualify_idea(
         for kw in keywords
         if _keyword_matches(kw, evidence_tokens, evidence_lower)
     ]
-    is_aligned = len(matched_pillars) >= 1 and len(evidence_pillar_hits) >= 1
+
+    # Compare against the live public showcase, not only a static keyword list.
+    candidate_showcase_tokens = _tokenize_meaningful(
+        f"{clean_title} {clean_summary} {clean_evidence}"
+    )
+    matched_showcase_entries: list[dict[str, Any]] = []
+    for entry in showcase_entries:
+        entry_title = _clean_text(entry.get("title"))
+        if not entry_title:
+            continue
+        entry_tags = [str(tag) for tag in (entry.get("tags") or [])]
+        entry_tokens = _tokenize_meaningful(" ".join([entry_title, *entry_tags]))
+        shared_terms = sorted(candidate_showcase_tokens.intersection(entry_tokens))
+        strong_terms = [term for term in shared_terms if len(term) >= 5]
+        if strong_terms or len(shared_terms) >= 2:
+            matched_showcase_entries.append(
+                {
+                    "title": entry_title,
+                    "tags": entry_tags,
+                    "shared_terms": shared_terms,
+                }
+            )
+
+    is_aligned = (
+        len(matched_pillars) >= 1
+        and len(evidence_pillar_hits) >= 1
+        and len(matched_showcase_entries) >= 1
+    )
+    alignment_detail = {
+        "is_aligned": is_aligned,
+        "matched_pillars": matched_pillars,
+        "matched_terms": matched_terms,
+        "matched_showcase_entries": matched_showcase_entries,
+        "submitted_evidence": clean_evidence,
+        "showcase_source": PUBLIC_SHOWCASE_INDEX_URL,
+    }
 
     reasons: list[str] = []
     if is_duplicate:
@@ -1399,6 +1563,7 @@ def qualify_idea(
                 "checked_against_counts": {
                     "cloud_builder_stack_ideas": len(catalogue_result["ideas"]),
                     "public_projects_and_showcase": len(project_catalogue["rfps"]),
+                    "public_showcase_entries": len(showcase_entries),
                 },
                 "matches": [],
             },
@@ -1411,10 +1576,7 @@ def qualify_idea(
                 ),
             },
             "alignment_evidence": {
-                "is_aligned": True,
-                "matched_pillars": matched_pillars,
-                "matched_terms": matched_terms,
-                "submitted_evidence": clean_evidence,
+                **alignment_detail,
                 "human_reviewed_rationale": None,
                 "reviewed_by": clean_reviewer or None,
             },
@@ -1432,6 +1594,7 @@ def qualify_idea(
                 "checked_against_counts": {
                     "cloud_builder_stack_ideas": len(catalogue_result["ideas"]),
                     "public_projects_and_showcase": len(project_catalogue["rfps"]),
+                    "public_showcase_entries": len(showcase_entries),
                 },
                 "matches": overlap_matches,
             },
@@ -1444,10 +1607,7 @@ def qualify_idea(
                 ),
             },
             "alignment_evidence": {
-                "is_aligned": is_aligned,
-                "matched_pillars": matched_pillars,
-                "matched_terms": matched_terms,
-                "submitted_evidence": clean_evidence,
+                **alignment_detail,
                 "human_reviewed_rationale": clean_rationale or None,
                 "reviewed_by": clean_reviewer or None,
             },
@@ -1464,6 +1624,7 @@ def qualify_idea(
             "checked_against_counts": {
                 "cloud_builder_stack_ideas": len(catalogue_result["ideas"]),
                 "public_projects_and_showcase": len(project_catalogue["rfps"]),
+                "public_showcase_entries": len(showcase_entries),
             },
             "matches": [],
         },
@@ -1475,10 +1636,7 @@ def qualify_idea(
             ),
         },
         "alignment_evidence": {
-            "is_aligned": True,
-            "matched_pillars": matched_pillars,
-            "matched_terms": matched_terms,
-            "submitted_evidence": clean_evidence,
+            **alignment_detail,
             "human_reviewed_rationale": clean_rationale,
             "reviewed_by": clean_reviewer or None,
         },
@@ -1596,6 +1754,48 @@ def _ruleset_requires_code_owner_review(ruleset: dict[str, Any]) -> bool:
     return False
 
 
+def _codeowners_pattern_matches(pattern: str, path: str) -> bool:
+    """Return True when a CODEOWNERS pattern covers the given repository path."""
+    cleaned = pattern.strip().lstrip("/")
+    if not cleaned:
+        return False
+    if cleaned == "*":
+        return True
+    if cleaned.endswith("/"):
+        return path.startswith(cleaned)
+    if "/" not in cleaned:
+        return fnmatch.fnmatch(path.rsplit("/", 1)[-1], cleaned)
+    if any(char in cleaned for char in "*?["):
+        return fnmatch.fnmatch(path, cleaned)
+    return path == cleaned
+
+
+def _codeowners_covers_path(
+    text: str,
+    path: str,
+    approved_owners: frozenset[str],
+) -> bool:
+    """Return True when an approved owner rule covers the exact path.
+
+    A bare mention of an owner in a comment or an unrelated rule does not count.
+    """
+    normalized_path = path.strip().lstrip("/")
+    approved = {owner.lower() for owner in approved_owners}
+    for raw_line in text.splitlines():
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        pattern, owners = parts[0], parts[1:]
+        if not any(owner.lower() in approved for owner in owners):
+            continue
+        if _codeowners_pattern_matches(pattern, normalized_path):
+            return True
+    return False
+
+
 def _fetch_cloud_builder_stack_policy_state(*, timeout: float = 10.0) -> dict[str, Any]:
     """Query live GitHub API for Cloud Builder Stack CODEOWNERS, branch protection, and rulesets."""
     codeowners_present = False
@@ -1612,8 +1812,11 @@ def _fetch_cloud_builder_stack_policy_state(*, timeout: float = 10.0) -> dict[st
                 content_b64 = data.get("content", "")
                 decoded = base64.b64decode(content_b64).decode("utf-8", errors="ignore")
                 codeowners_present = True
-                if "@valiantone" in decoded or "@knowb-ai/" in decoded:
-                    codeowners_covers_catalogue = True
+                codeowners_covers_catalogue = _codeowners_covers_path(
+                    decoded,
+                    CANONICAL_IDEA_CATALOGUE_PATH,
+                    APPROVED_CODEOWNER_OWNERS,
+                )
                 break
         except (urllib.error.URLError, TimeoutError, ValueError):
             continue
@@ -1756,6 +1959,7 @@ def propose_idea_catalogue_addition(
     source_fetcher: Optional[Callable[[], str]] = None,
     repo_metadata: Optional[list[dict[str, Any]]] = None,
     readme_fetcher: Optional[Callable[[str, str], Optional[str]]] = None,
+    showcase_fetcher: Optional[Callable[[], list[dict[str, Any]]]] = None,
     policy_inspector: Optional[Callable[[], dict[str, Any]]] = None,
     policy_pr_url: Optional[str] = None,
     auth_context: Optional[dict[str, Any]] = None,
@@ -1795,6 +1999,7 @@ def propose_idea_catalogue_addition(
         source_fetcher=_memo_source,
         repo_metadata=repo_metadata,
         readme_fetcher=readme_fetcher,
+        showcase_fetcher=showcase_fetcher,
     )
     if not qualification.get("eligible"):
         return {
@@ -1892,6 +2097,47 @@ def propose_idea_catalogue_addition(
             "next": "verify_github_identity_and_repo_permission",
         }
 
+    # The human-reviewed rationale must come from the verified maintainer/admin caller.
+    reviewer_login = _clean_text(reviewed_by)
+    reviewer_rejection = None
+    if not reviewer_login:
+        reviewer_rejection = (
+            "reviewer_identity_required",
+            "reviewed_by must name the verified GitHub maintainer or admin approving the idea.",
+        )
+    elif reviewer_login.lower() != auth_check["verified_login"].lower():
+        reviewer_rejection = (
+            "reviewer_identity_mismatch",
+            (
+                f"reviewed_by '{reviewer_login}' does not match the authenticated "
+                f"GitHub identity '{auth_check['verified_login']}'."
+            ),
+        )
+    elif auth_check["verified_permission"] not in {"maintain", "admin"}:
+        reviewer_rejection = (
+            "maintainer_review_required",
+            (
+                f"Cloud Builder Stack proposal approval requires maintain or admin "
+                f"permission; '{auth_check['verified_login']}' has "
+                f"'{auth_check['verified_permission']}'."
+            ),
+        )
+    if reviewer_rejection is not None:
+        return {
+            "status": "reviewer_verification_failed",
+            "eligible": True,
+            "submitted": False,
+            "submission_enabled": review_policy["submission_enabled"],
+            "source_unchanged": True,
+            "authorization": auth_check,
+            "qualification": qualification,
+            "preview": preview,
+            "review_policy": review_policy,
+            "reasons": [reviewer_rejection[0]],
+            "detail": reviewer_rejection[1],
+            "next": "reauthenticate_as_reviewing_maintainer",
+        }
+
     if not review_policy["enforced"]:
         return {
             "status": "blocked_by_review_policy",
@@ -1913,7 +2159,10 @@ def propose_idea_catalogue_addition(
             "next": "merge_policy_pr_and_enable_admin_branch_protection",
         }
 
-    if pr_submitter is None:
+    submitter = pr_submitter or github_pr_submitter
+    try:
+        pr_result = submitter(preview)
+    except Exception as exc:
         return {
             "status": "submission_transport_unavailable",
             "eligible": True,
@@ -1924,10 +2173,10 @@ def propose_idea_catalogue_addition(
             "qualification": qualification,
             "preview": preview,
             "review_policy": review_policy,
+            "error": str(exc),
             "next": "open_reviewable_pr_with_preview",
         }
 
-    pr_result = pr_submitter(preview)
     return {
         "status": "pr_submitted",
         "eligible": True,
@@ -2070,6 +2319,57 @@ def resolve_live_github_auth_context(
         },
         "bot_installation": bot_installation,
     }
+
+
+def _extract_bearer_token(authorization: Optional[str]) -> Optional[str]:
+    """Return the bearer token from an Authorization header value, if present."""
+    if not authorization or not isinstance(authorization, str):
+        return None
+    scheme, separator, token = authorization.strip().partition(" ")
+    if not separator or scheme.lower() != "bearer":
+        return None
+    cleaned = token.strip()
+    return cleaned or None
+
+
+def resolve_request_auth_context(
+    authorization: Optional[str],
+    target_repo: str = BETTERHACKDAYS_REPO,
+    *,
+    timeout: float = 10.0,
+) -> dict[str, Any]:
+    """Resolve a live GitHub identity from an inbound bearer token.
+
+    Request bodies never carry identity or permission claims. When the header is
+    missing or malformed, the context fails closed instead of falling back to a
+    server token, because a server token would authorize every anonymous caller.
+    """
+    token = _extract_bearer_token(authorization)
+    if not token:
+        return {
+            "identity_lookup_failed": True,
+            "auth_source": "missing_bearer_token",
+        }
+    context = resolve_live_github_auth_context(target_repo, token=token, timeout=timeout)
+    context["auth_source"] = "request_bearer_token"
+    return context
+
+
+def resolve_service_auth_context(
+    target_repo: str = BETTERHACKDAYS_REPO,
+    *,
+    timeout: float = 10.0,
+) -> dict[str, Any]:
+    """Resolve the server-side GitHub token identity for MCP and server-initiated calls."""
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        return {
+            "identity_lookup_failed": True,
+            "auth_source": "service_token_unavailable",
+        }
+    context = resolve_live_github_auth_context(target_repo, token=token, timeout=timeout)
+    context["auth_source"] = "service_env_token"
+    return context
 
 
 
@@ -2523,7 +2823,7 @@ def grant_repository_access(
         "confirmed": True,
     }
 
-    if dry_run or invitation_sender is None:
+    if dry_run:
         return {
             "status": "approved_dry_run",
             "authorized": True,
@@ -2538,7 +2838,25 @@ def grant_repository_access(
             "grant": grant_spec,
         }
 
-    send_result = invitation_sender(grant_spec)
+    sender = invitation_sender or github_invitation_sender
+    try:
+        send_result = sender(grant_spec)
+    except Exception as exc:
+        return {
+            "status": "invitation_transport_unavailable",
+            "authorized": True,
+            "operation": "repo_access_grant",
+            "target_repo": normalized_target,
+            "verified_login": actor_login,
+            "verified_permission": auth_result["verified_permission"],
+            "grantee_login": clean_grantee,
+            "granted_permission": clean_permission,
+            "mutation_performed": False,
+            "invitation_sent": False,
+            "grant": grant_spec,
+            "error": str(exc),
+        }
+
     return {
         "status": "invitation_recorded",
         "authorized": True,
@@ -2552,6 +2870,185 @@ def grant_repository_access(
         "invitation_sent": bool(send_result.get("invitation_sent", False)),
         "grant": grant_spec,
     }
+
+
+# --- GitHub and email mutation transports ---
+
+
+def _github_api_request(
+    method: str,
+    url: str,
+    *,
+    payload: Optional[dict[str, Any]] = None,
+    token: Optional[str] = None,
+    timeout: float = 20.0,
+) -> Any:
+    """Call the GitHub REST API with an explicit token and return decoded JSON."""
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    headers = _github_headers(token)
+    headers["Content-Type"] = "application/json"
+    request = urllib.request.Request(url, data=data, headers=headers, method=method)
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        body = response.read().decode("utf-8")
+    return json.loads(body) if body else {}
+
+
+def _resolve_mutation_token(token: Optional[str] = None) -> str:
+    resolved = token or os.getenv("KENOBI_GITHUB_TOKEN") or os.getenv("GITHUB_TOKEN")
+    if not resolved:
+        raise RuntimeError(
+            "GitHub mutation transport requires KENOBI_GITHUB_TOKEN or GITHUB_TOKEN."
+        )
+    return resolved
+
+
+def github_pr_submitter(
+    spec: dict[str, Any],
+    *,
+    token: Optional[str] = None,
+    timeout: float = 20.0,
+) -> dict[str, Any]:
+    """Open a reviewable pull request for a proposed addition and request the approved reviewer."""
+    resolved_token = _resolve_mutation_token(token)
+    repo = spec["target_repo"]
+    base_branch = spec["base_branch"]
+    head_branch = spec["head_branch"]
+    target_path = spec["target_path"]
+
+    base_ref = _github_api_request(
+        "GET",
+        f"{GITHUB_API_BASE}/repos/{repo}/git/ref/heads/{urllib.parse.quote(base_branch)}",
+        token=resolved_token,
+        timeout=timeout,
+    )
+    base_sha = base_ref["object"]["sha"]
+
+    try:
+        _github_api_request(
+            "POST",
+            f"{GITHUB_API_BASE}/repos/{repo}/git/refs",
+            payload={"ref": f"refs/heads/{head_branch}", "sha": base_sha},
+            token=resolved_token,
+            timeout=timeout,
+        )
+    except urllib.error.HTTPError as exc:
+        if exc.code != 422:
+            raise
+
+    existing = _github_api_request(
+        "GET",
+        f"{GITHUB_API_BASE}/repos/{repo}/contents/{urllib.parse.quote(target_path)}"
+        f"?ref={urllib.parse.quote(base_branch)}",
+        token=resolved_token,
+        timeout=timeout,
+    )
+    existing_content = base64.b64decode(existing.get("content", "")).decode("utf-8")
+    appended = existing_content.rstrip("\n") + "\n\n" + spec["proposed_markdown_block"]
+
+    _github_api_request(
+        "PUT",
+        f"{GITHUB_API_BASE}/repos/{repo}/contents/{urllib.parse.quote(target_path)}",
+        payload={
+            "message": spec["pr_title"],
+            "content": base64.b64encode(appended.encode("utf-8")).decode("ascii"),
+            "branch": head_branch,
+            "sha": existing.get("sha"),
+        },
+        token=resolved_token,
+        timeout=timeout,
+    )
+
+    pull_request = _github_api_request(
+        "POST",
+        f"{GITHUB_API_BASE}/repos/{repo}/pulls",
+        payload={
+            "title": spec["pr_title"],
+            "head": head_branch,
+            "base": base_branch,
+            "body": spec["pr_body"],
+        },
+        token=resolved_token,
+        timeout=timeout,
+    )
+    number = pull_request.get("number")
+
+    _github_api_request(
+        "POST",
+        f"{GITHUB_API_BASE}/repos/{repo}/pulls/{number}/requested_reviewers",
+        payload={"reviewers": [spec["reviewer"]]},
+        token=resolved_token,
+        timeout=timeout,
+    )
+    _github_api_request(
+        "POST",
+        f"{GITHUB_API_BASE}/repos/{repo}/issues/{number}/assignees",
+        payload={"assignees": [spec["assignee"]]},
+        token=resolved_token,
+        timeout=timeout,
+    )
+
+    return {
+        "url": pull_request.get("html_url"),
+        "number": number,
+        "state": pull_request.get("state", "open"),
+    }
+
+
+def github_invitation_sender(
+    grant: dict[str, Any],
+    *,
+    token: Optional[str] = None,
+    timeout: float = 20.0,
+) -> dict[str, Any]:
+    """Send an owner-approved repository invitation through the GitHub API."""
+    resolved_token = _resolve_mutation_token(token)
+    repo = grant["target_repo"]
+    grantee = urllib.parse.quote(grant["grantee_login"])
+    _github_api_request(
+        "PUT",
+        f"{GITHUB_API_BASE}/repos/{repo}/collaborators/{grantee}",
+        payload={"permission": grant["permission"]},
+        token=resolved_token,
+        timeout=timeout,
+    )
+    return {"invitation_sent": True, "permission": grant["permission"]}
+
+
+def send_contributor_request_email(
+    payload: dict[str, Any],
+    *,
+    timeout: float = 20.0,
+) -> dict[str, Any]:
+    """Send an approved contributor request to the configured owner inbox over SMTP.
+
+    Uses deployment-provided SMTP settings and no new mail vendor. When SMTP is
+    not configured the caller keeps the addressed draft and reports it as unsent.
+    """
+    host = _clean_text(os.getenv("SMTP_HOST"))
+    username = _clean_text(os.getenv("SMTP_USERNAME"))
+    password = os.getenv("SMTP_PASSWORD")
+    sender = _clean_text(os.getenv("SMTP_FROM"))
+    try:
+        port = int(os.getenv("SMTP_PORT", "587") or 587)
+    except ValueError:
+        port = 587
+    if not (host and username and password and sender):
+        raise RuntimeError(
+            "SMTP delivery is not configured (SMTP_HOST, SMTP_USERNAME, "
+            "SMTP_PASSWORD, SMTP_FROM)."
+        )
+
+    message = EmailMessage()
+    message["From"] = sender
+    message["To"] = payload["recipient"]
+    message["Subject"] = payload["subject"]
+    message.set_content(payload["formatted_body"])
+
+    with smtplib.SMTP(host, port, timeout=timeout) as smtp:
+        smtp.starttls()
+        smtp.login(username, password)
+        smtp.send_message(message)
+    return {"sent": True}
 
 
 # --- Work Package 5: Public design resources, RFP discovery, and contributor requests ---
@@ -2717,6 +3214,34 @@ def list_design_resources() -> dict[str, Any]:
     }
 
 
+TEXT_DESIGN_RESOURCE_SUFFIXES = (".md", ".css", ".svg", ".txt")
+
+DESIGN_RESOURCE_CONTENT_TYPES: dict[str, str] = {
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".css": "text/css",
+    ".md": "text/markdown",
+    ".txt": "text/plain",
+}
+
+
+def fetch_design_resource_content(path: str, *, timeout: float = 10.0) -> Optional[str]:
+    """Fetch the actual allowlisted public design resource from the website repository."""
+    if path not in ALLOWLISTED_DESIGN_RESOURCES:
+        return None
+    if not path.endswith(TEXT_DESIGN_RESOURCE_SUFFIXES):
+        return None
+    url = f"{DESIGN_RESOURCE_RAW_BASE}/{urllib.parse.quote(path)}"
+    request = urllib.request.Request(
+        url, headers={"User-Agent": "BetterHackdays-Connector/0.1"}
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return response.read().decode("utf-8", errors="replace")
+    except (urllib.error.URLError, TimeoutError, ValueError):
+        return None
+
+
 def read_design_resource(
     path: str,
     *,
@@ -2725,7 +3250,8 @@ def read_design_resource(
 ) -> dict[str, Any]:
     """Read an allowlisted public design resource from knowb-ai.github.io.
 
-    Rejects any path outside the explicit allowlist or any non-website repository.
+    Rejects any path outside the explicit allowlist or any non-website repository,
+    and serves live file content rather than a static summary where the asset is text.
     """
     clean_repo = _clean_text(repo or DESIGN_RESOURCE_REPO)
     raw_path = _clean_text(path).lstrip("/")
@@ -2762,11 +3288,29 @@ def read_design_resource(
         }
 
     entry = dict(ALLOWLISTED_DESIGN_RESOURCES[raw_path])
-    excerpt = entry["default_excerpt"]
-    if content_fetcher is not None:
-        fetched = content_fetcher(raw_path)
-        if fetched:
-            excerpt = _clean_text(fetched)[:600]
+    suffix = "." + raw_path.rsplit(".", 1)[-1].lower() if "." in raw_path else ""
+    raw_url = f"{DESIGN_RESOURCE_RAW_BASE}/{urllib.parse.quote(raw_path)}"
+    is_text_asset = raw_path.endswith(TEXT_DESIGN_RESOURCE_SUFFIXES)
+
+    fetched: Optional[str] = None
+    if is_text_asset:
+        fetcher = content_fetcher or fetch_design_resource_content
+        fetched = fetcher(raw_path)
+
+    if is_text_asset:
+        content_available = bool(fetched)
+        excerpt = _clean_text(fetched)[:1200] if fetched else None
+        content_source = "live_repository_file" if fetched else "unavailable"
+        note = (
+            None
+            if fetched
+            else "Allowlisted resource could not be fetched from the public repository."
+        )
+    else:
+        content_available = True
+        excerpt = None
+        content_source = "allowlisted_binary_asset"
+        note = "Binary asset; use raw_url to fetch the published file."
 
     return {
         "status": "ok",
@@ -2778,8 +3322,13 @@ def read_design_resource(
             "repo": entry["repo"],
             "source_url": entry["source_url"],
             "public_url": entry["public_url"],
+            "raw_url": raw_url,
+            "content_type": DESIGN_RESOURCE_CONTENT_TYPES.get(suffix, "application/octet-stream"),
+            "content_available": content_available,
+            "content_source": content_source,
             "summary": entry["summary"],
             "excerpt": excerpt,
+            "note": note,
         },
         "next": "explore_rfps_or_design_system",
     }
@@ -3159,28 +3708,28 @@ def submit_contributor_request(
         f"to {APPROVED_REQUEST_RECIPIENT}. Request was not sent."
     )
 
-    if delivery_transport is not None:
-        try:
-            transport_res = delivery_transport(
-                {
-                    "request_id": request_id,
-                    "requester_login": verified_requester,
-                    **preview_payload,
-                }
-            )
-            if isinstance(transport_res, dict) and transport_res.get("sent") is True:
-                sent = True
-                delivery_status = "sent"
-                delivery_note = (
-                    f"Request routed to {APPROVED_REQUEST_RECIPIENT} via approved connector route."
-                )
-        except Exception as exc:
-            sent = False
-            delivery_status = "not_sent"
+    transport = delivery_transport or send_contributor_request_email
+    try:
+        transport_res = transport(
+            {
+                "request_id": request_id,
+                "requester_login": verified_requester,
+                **preview_payload,
+            }
+        )
+        if isinstance(transport_res, dict) and transport_res.get("sent") is True:
+            sent = True
+            delivery_status = "sent"
             delivery_note = (
-                f"Approved send mechanism failed ({exc}); returning complete addressed "
-                f"draft to {APPROVED_REQUEST_RECIPIENT}. Request was not sent."
+                f"Request routed to {APPROVED_REQUEST_RECIPIENT} via approved connector route."
             )
+    except Exception as exc:
+        sent = False
+        delivery_status = "not_sent"
+        delivery_note = (
+            f"Approved send mechanism failed ({exc}); returning complete addressed "
+            f"draft to {APPROVED_REQUEST_RECIPIENT}. Request was not sent."
+        )
 
     ensure_schema()
     with get_conn() as conn:

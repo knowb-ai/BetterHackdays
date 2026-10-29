@@ -537,6 +537,104 @@ def grant_repository_access(
     )
 
 
+def _mcp_service_auth_context(target_repo: str) -> dict[str, Any]:
+    """Resolve identity from server-side credentials for MCP calls.
+
+    MCP callers cannot supply identity or permission claims; only the server
+    token is used, and it is resolved live against the GitHub API.
+    """
+    return rfp_connector.resolve_service_auth_context(target_repo)
+
+
+def propose_idea_catalogue_addition_mcp(
+    title: str,
+    summary: str,
+    alignment_evidence: Optional[str] = None,
+    human_reviewed_rationale: Optional[str] = None,
+    reviewed_by: Optional[str] = None,
+    section: str = "10. Stronger Actual AI System Ideas",
+    submit: bool = False,
+) -> dict[str, Any]:
+    """MCP entry point that resolves identity server-side before any catalogue PR."""
+    auth_context = (
+        _mcp_service_auth_context(rfp_connector.CANONICAL_IDEA_CATALOGUE_REPO)
+        if submit
+        else None
+    )
+    return propose_idea_catalogue_addition(
+        title,
+        summary,
+        alignment_evidence=alignment_evidence,
+        human_reviewed_rationale=human_reviewed_rationale,
+        reviewed_by=reviewed_by,
+        section=section,
+        submit=submit,
+        auth_context=auth_context,
+    )
+
+
+def submit_contributor_request_mcp(
+    request_type: str,
+    rfp_id: str,
+    requested_scope: str,
+    message: str,
+) -> dict[str, Any]:
+    """MCP entry point that resolves identity server-side before recording a request."""
+    return submit_contributor_request(
+        request_type,
+        rfp_id,
+        requested_scope,
+        message,
+        auth_context=_mcp_service_auth_context(rfp_connector.BETTERHACKDAYS_REPO),
+    )
+
+
+def list_contributor_requests_mcp() -> dict[str, Any]:
+    """MCP entry point that resolves identity server-side before listing private requests."""
+    return list_contributor_requests(
+        auth_context=_mcp_service_auth_context(rfp_connector.BETTERHACKDAYS_REPO)
+    )
+
+
+def authorize_github_mutation_mcp(
+    operation: str,
+    target_repo: str,
+    expected_target_repo: Optional[str] = None,
+    caller_supplied_login: Optional[str] = None,
+) -> dict[str, Any]:
+    """MCP entry point that resolves identity server-side before an authorization check."""
+    return authorize_github_mutation(
+        operation=operation,
+        target_repo=target_repo,
+        expected_target_repo=expected_target_repo,
+        caller_supplied_login=caller_supplied_login,
+        auth_context=_mcp_service_auth_context(target_repo),
+    )
+
+
+def grant_repository_access_mcp(
+    target_repo: str,
+    grantee_login: str,
+    permission: str = "write",
+    requester_login: Optional[str] = None,
+    confirmed: bool = False,
+) -> dict[str, Any]:
+    """MCP entry point for a preview-only repository grant.
+
+    Invitations remain an owner-run operation outside MCP, so this always returns
+    a dry-run approval rather than sending anything.
+    """
+    return grant_repository_access(
+        target_repo=target_repo,
+        grantee_login=grantee_login,
+        permission=permission,
+        requester_login=requester_login,
+        confirmed=confirmed,
+        auth_context=_mcp_service_auth_context(target_repo),
+        dry_run=True,
+    )
+
+
 # Registry for a future MCP server to enumerate and register these as tools.
 MCP_TOOLS = {
     "connect_harness": connect_harness,
@@ -562,10 +660,10 @@ MCP_TOOLS = {
     "search_design_resources": search_design_resources,
     "fetch_idea_catalogue": fetch_idea_catalogue,
     "qualify_idea": qualify_idea,
-    "propose_idea_catalogue_addition": propose_idea_catalogue_addition,
+    "propose_idea_catalogue_addition": propose_idea_catalogue_addition_mcp,
     "preview_contributor_request": preview_contributor_request,
-    "submit_contributor_request": submit_contributor_request,
-    "list_contributor_requests": list_contributor_requests,
-    "authorize_github_mutation": authorize_github_mutation,
-    "grant_repository_access": grant_repository_access,
+    "submit_contributor_request": submit_contributor_request_mcp,
+    "list_contributor_requests": list_contributor_requests_mcp,
+    "authorize_github_mutation": authorize_github_mutation_mcp,
+    "grant_repository_access": grant_repository_access_mcp,
 }

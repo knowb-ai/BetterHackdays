@@ -20,16 +20,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 
-from . import mcp_tools, survey
+from . import mcp_tools, rfp_connector, survey
 from .db import init_db
 from .models import (
     CardsResponse,
     CompareRfpsRequest,
     ConnectRequest,
     ConnectResponse,
-    ContributorRequestListInput,
     ContributorRequestPreviewInput,
     ContributorRequestSubmitInput,
     DesignResourceReadRequest,
@@ -300,6 +299,28 @@ def survey_state(
 # --- KnowB RFP, design resources, idea catalogue, and contributor connector --
 
 
+def _request_auth_context_for_betterhackdays(
+    authorization: str | None = Header(default=None, alias="Authorization"),
+) -> dict:
+    """Resolve the caller's live GitHub identity for BetterHackdays write operations.
+
+    Request bodies never supply identity or permission claims; only the bearer
+    token on the request is trusted, and it is resolved against the GitHub API.
+    """
+    return rfp_connector.resolve_request_auth_context(
+        authorization, rfp_connector.BETTERHACKDAYS_REPO
+    )
+
+
+def _request_auth_context_for_cloud_builder_stack(
+    authorization: str | None = Header(default=None, alias="Authorization"),
+) -> dict:
+    """Resolve the caller's live GitHub identity for Cloud Builder Stack proposals."""
+    return rfp_connector.resolve_request_auth_context(
+        authorization, rfp_connector.CANONICAL_IDEA_CATALOGUE_REPO
+    )
+
+
 @app.get("/rfps")
 def rfps_list(
     visibility: str | None = Query(
@@ -369,7 +390,10 @@ def ideas_qualify(req: QualifyIdeaRequest) -> dict:
 
 
 @app.post("/ideas/propose")
-def ideas_propose(req: ProposeIdeaCatalogueRequest) -> dict:
+def ideas_propose(
+    req: ProposeIdeaCatalogueRequest,
+    auth_context: dict = Depends(_request_auth_context_for_cloud_builder_stack),
+) -> dict:
     return mcp_tools.propose_idea_catalogue_addition(
         title=req.title,
         summary=req.summary,
@@ -378,7 +402,7 @@ def ideas_propose(req: ProposeIdeaCatalogueRequest) -> dict:
         reviewed_by=req.reviewed_by,
         section=req.section,
         submit=req.submit,
-        auth_context=req.auth_context,
+        auth_context=auth_context,
     )
 
 
@@ -393,20 +417,22 @@ def contributor_request_preview(req: ContributorRequestPreviewInput) -> dict:
 
 
 @app.post("/contributor/requests/submit")
-def contributor_request_submit(req: ContributorRequestSubmitInput) -> dict:
+def contributor_request_submit(
+    req: ContributorRequestSubmitInput,
+    auth_context: dict = Depends(_request_auth_context_for_betterhackdays),
+) -> dict:
     return mcp_tools.submit_contributor_request(
         request_type=req.request_type,
         rfp_id=req.rfp_id,
         requested_scope=req.requested_scope,
         message=req.message,
-        target_repo=req.target_repo,
-        caller_supplied_login=req.caller_supplied_login,
-        asserted_role=req.asserted_role,
-        auth_context=req.auth_context,
+        auth_context=auth_context,
     )
 
 
 @app.post("/contributor/requests/list")
-def contributor_request_list(req: ContributorRequestListInput) -> dict:
-    return mcp_tools.list_contributor_requests(auth_context=req.auth_context)
+def contributor_request_list(
+    auth_context: dict = Depends(_request_auth_context_for_betterhackdays),
+) -> dict:
+    return mcp_tools.list_contributor_requests(auth_context=auth_context)
 

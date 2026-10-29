@@ -478,7 +478,6 @@ class ProposeIdeaCatalogueRequest(BaseModel):
     reviewed_by: Optional[str] = None
     section: str = "10. Stronger Actual AI System Ideas"
     submit: bool = False
-    auth_context: Optional[dict[str, Any]] = None
 
 
 class ContributorRequestPreviewInput(BaseModel):
@@ -493,12 +492,4 @@ class ContributorRequestSubmitInput(BaseModel):
     rfp_id: str = Field(..., min_length=1, max_length=120)
     requested_scope: str = Field(..., min_length=1, max_length=500)
     message: str = Field(..., min_length=1, max_length=4000)
-    target_repo: str = "knowb-ai/BetterHackdays"
-    caller_supplied_login: Optional[str] = None
-    asserted_role: Optional[str] = None
-    auth_context: Optional[dict[str, Any]] = None
-
-
-class ContributorRequestListInput(BaseModel):
-    auth_context: Optional[dict[str, Any]] = None
 

@@ -29,7 +29,6 @@ from app.main import (
 )
 from app.models import (
     CompareRfpsRequest,
-    ContributorRequestListInput,
     ContributorRequestPreviewInput,
     ContributorRequestSubmitInput,
     DesignResourceReadRequest,
@@ -45,6 +44,79 @@ REPRESENTATIVE_EVENT_TEXT = (
     "Submission deadline: 2026-07-12 16:00\n"
     "Judging criteria: Technical execution, demo quality"
 )
+
+SAMPLE_PUBLIC_SHOWCASE: list[dict[str, Any]] = [
+    {"title": "ShadowCaster", "tags": ["Platform Visibility", "Moderation Policy", "Event Amplification"]},
+    {"title": "Underminer", "tags": ["Narrative Reconstruction", "Source Traceability", "Context Tracing"]},
+    {"title": "X-Poser", "tags": ["Claim Checking", "Evidence Retrieval", "Smoke Test"]},
+    {"title": "Precongnition", "tags": ["Conference Discovery", "Session Continuity", "Learning Graph"]},
+    {"title": "MarkSweep", "tags": ["Inbox Triage", "Browser Extension", "User Rules"]},
+    {"title": "Subtracktor", "tags": ["Subscription Escape", "Inbox Agents", "Financial Leakage"]},
+    {"title": "BetterHackdays", "tags": ["Shared Hack Day", "Team Formation", "Project Continuity"]},
+    {"title": "BetterLover", "tags": ["Care Planning", "Cycle-Aware Context", "Consent First"]},
+    {"title": "Sepnu Pues", "tags": ["Daily Follow-Through", "Opt-In Accountability", "User Controlled Sharing"]},
+]
+
+SAMPLE_DESIGN_CONTENT: dict[str, str] = {
+    "DESIGN_SYSTEM.md": (
+        "# KnowB Visual Design System\n\n"
+        "Autumn and Gold palettes, Internal/External/Artistic channels, six themes, "
+        "five styles, and fixed typography."
+    ),
+    "ORGBRAND_GUIDELINES.md": (
+        "# Autumn Implementation\n\n"
+        "Autumn tokens, gradients, contrast, CRT, motion, and WCAG 2.2 AA rules."
+    ),
+    "content/org-book.md": "# KnowB AI Visual Design System\n\nPublic Org Book page.",
+    "static/css/global.css": ":root { --autumn-fire: #FF4A1A; }",
+    "static/css/concept-book.css": ".plate { color: #FCF6F3; }",
+    "static/favicon.svg": "<svg><rect fill=\"#FF4A1A\" /></svg>",
+    "design/pixel-icons/dictionary.txt": "dictionary: agent, room, plan",
+}
+
+
+def _patch_live_public_sources(testcase: unittest.TestCase) -> None:
+    """Keep tests hermetic while production defaults stay live."""
+    patches = [
+        patch.object(
+            rfp_connector,
+            "fetch_public_org_repos",
+            return_value=[dict(repo) for repo in rfp_connector.DEFAULT_PUBLIC_REPO_METADATA],
+        ),
+        patch.object(
+            rfp_connector,
+            "fetch_public_repo_readme",
+            side_effect=lambda name, branch="main", **kwargs: rfp_connector.DEFAULT_PUBLIC_READMES.get(name),
+        ),
+        patch.object(
+            rfp_connector,
+            "fetch_public_showcase_entries",
+            return_value=[dict(entry) for entry in SAMPLE_PUBLIC_SHOWCASE],
+        ),
+        patch.object(
+            rfp_connector,
+            "fetch_canonical_idea_catalogue_markdown",
+            side_effect=lambda **kwargs: SAMPLE_CLOUD_BUILDER_STACK_CATALOGUE,
+        ),
+        patch.object(
+            rfp_connector,
+            "_fetch_cloud_builder_stack_policy_state",
+            return_value={
+                "codeowners_present": False,
+                "codeowners_covers_catalogue": False,
+                "branch_protection_enforced": False,
+                "ruleset_review_enforced": False,
+            },
+        ),
+        patch.object(
+            rfp_connector,
+            "fetch_design_resource_content",
+            side_effect=lambda path, **kwargs: SAMPLE_DESIGN_CONTENT.get(path),
+        ),
+    ]
+    for patcher in patches:
+        patcher.start()
+        testcase.addCleanup(patcher.stop)
 
 REPRESENTATIVE_PROFILE = {
     "harness_id": "harness_wp1",
@@ -156,6 +228,9 @@ class TestWorkPackage1BaselineFlow(unittest.TestCase):
 class TestWorkPackage2RfpCatalogue(unittest.TestCase):
     """Work Package 2: Public project RFP catalogue discovery, filtering, README grounding, and privacy."""
 
+    def setUp(self) -> None:
+        _patch_live_public_sources(self)
+
     def test_default_catalogue_preserves_website_rfps_live_projects_and_connector_only_briefs(
         self,
     ) -> None:
@@ -227,6 +302,30 @@ class TestWorkPackage2RfpCatalogue(unittest.TestCase):
 
         serialized = str(catalogue).lower()
         self.assertNotIn("knowledgehq", serialized)
+
+    def test_default_catalogue_uses_live_public_sources_and_reports_fallback(
+        self,
+    ) -> None:
+        live = rfp_connector.build_project_rfp_catalogue()
+        self.assertEqual(live["metadata_source"], "live_public_org_repos")
+
+        fallback = rfp_connector.build_project_rfp_catalogue(
+            repo_metadata=None,
+            readme_fetcher=lambda name, branch: rfp_connector.DEFAULT_PUBLIC_READMES.get(name),
+        )
+        self.assertEqual(fallback["metadata_source"], "live_public_org_repos")
+
+        with patch.object(
+            rfp_connector,
+            "fetch_public_org_repos",
+            side_effect=RuntimeError("upstream 503"),
+        ):
+            degraded = rfp_connector.build_project_rfp_catalogue()
+        self.assertEqual(
+            degraded["metadata_source"],
+            "baseline_fallback_live_listing_unavailable",
+        )
+        self.assertTrue(degraded["rfps"])
 
     def test_filtering_excludes_private_archived_unapproved_forks_ascii_and_deduplicates(
         self,
@@ -380,6 +479,7 @@ class TestWorkPackage3IdeaQualificationAndCatalogue(unittest.TestCase):
 
     def setUp(self) -> None:
         self.canonical_source = SAMPLE_CLOUD_BUILDER_STACK_CATALOGUE
+        _patch_live_public_sources(self)
 
     def _source_fetcher(self) -> str:
         return self.canonical_source
@@ -571,6 +671,149 @@ class TestWorkPackage3IdeaQualificationAndCatalogue(unittest.TestCase):
         }
         self.assertTrue(rfp_connector._ruleset_targets_default_branch(enforced))
         self.assertTrue(rfp_connector._ruleset_requires_code_owner_review(enforced))
+
+    def test_codeowners_coverage_requires_a_rule_for_the_catalogue_path(self) -> None:
+        path = rfp_connector.CANONICAL_IDEA_CATALOGUE_PATH
+        owners = rfp_connector.APPROVED_CODEOWNER_OWNERS
+
+        self.assertFalse(
+            rfp_connector._codeowners_covers_path("# @valiantone reviews docs\n", path, owners)
+        )
+        self.assertFalse(
+            rfp_connector._codeowners_covers_path("* @someone-else\n", path, owners)
+        )
+        self.assertFalse(
+            rfp_connector._codeowners_covers_path(
+                "/docs/other.md @valiantone\n/scripts/kenobi.sh @valiantone\n", path, owners
+            )
+        )
+        self.assertTrue(
+            rfp_connector._codeowners_covers_path("* @valiantone\n", path, owners)
+        )
+        self.assertTrue(
+            rfp_connector._codeowners_covers_path(
+                "/docs/fun-project-and-hackathon-ideas.md @valiantone\n", path, owners
+            )
+        )
+        self.assertTrue(
+            rfp_connector._codeowners_covers_path("docs/* @valiantone\n", path, owners)
+        )
+
+    def test_qualification_fails_closed_when_public_showcase_is_unavailable(self) -> None:
+        def failing_showcase() -> list[dict[str, Any]]:
+            raise RuntimeError("knowb.run source 503")
+
+        result = rfp_connector.qualify_idea(
+            "Context Checkpoint Ledger",
+            "Audit agent memory handoffs and retrieval citations across workshop team sessions.",
+            alignment_evidence="Supports KnowB retrieval-backed agents and workshop builder sessions.",
+            human_reviewed_rationale="Reviewed by maintainer.",
+            source_fetcher=self._source_fetcher,
+            showcase_fetcher=failing_showcase,
+        )
+        self.assertEqual(result["status"], "showcase_unavailable")
+        self.assertFalse(result["eligible"])
+        self.assertIn("showcase_unavailable", result["reasons"])
+
+        empty_result = rfp_connector.qualify_idea(
+            "Context Checkpoint Ledger",
+            "Audit agent memory handoffs and retrieval citations across workshop team sessions.",
+            alignment_evidence="Supports KnowB retrieval-backed agents and workshop builder sessions.",
+            human_reviewed_rationale="Reviewed by maintainer.",
+            source_fetcher=self._source_fetcher,
+            showcase_fetcher=lambda: [],
+        )
+        self.assertEqual(empty_result["status"], "showcase_unavailable")
+        self.assertFalse(empty_result["eligible"])
+
+    def test_proposal_requires_verified_reviewer_identity_and_maintainer_permission(
+        self,
+    ) -> None:
+        base = dict(
+            title="Context Checkpoint Ledger",
+            summary="Audit agent memory handoffs and retrieval citations across workshop team sessions.",
+            alignment_evidence="Supports KnowB retrieval-backed agents, durable memory checkpoints, and workshop builder sessions.",
+            human_reviewed_rationale="Reviewed by maintainer as a distinct session provenance tool.",
+            submit=True,
+            source_fetcher=self._source_fetcher,
+            policy_inspector=lambda: {
+                "codeowners_present": True,
+                "codeowners_covers_catalogue": True,
+                "branch_protection_enforced": True,
+                "ruleset_review_enforced": False,
+            },
+            pr_submitter=lambda preview: {"url": "https://example.test/pr/1", "number": 1},
+        )
+
+        missing_reviewer = rfp_connector.propose_idea_catalogue_addition(
+            **{**base, "auth_context": self._admin_auth_context()},
+        )
+        self.assertEqual(missing_reviewer["status"], "reviewer_verification_failed")
+        self.assertIn("reviewer_identity_required", missing_reviewer["reasons"])
+
+        mismatched_reviewer = rfp_connector.propose_idea_catalogue_addition(
+            **{
+                **base,
+                "reviewed_by": "someone_else",
+                "auth_context": self._admin_auth_context(),
+            },
+        )
+        self.assertEqual(mismatched_reviewer["status"], "reviewer_verification_failed")
+        self.assertIn("reviewer_identity_mismatch", mismatched_reviewer["reasons"])
+
+        writer_reviewer = rfp_connector.propose_idea_catalogue_addition(
+            **{
+                **base,
+                "reviewed_by": "valiantone",
+                "auth_context": self._admin_auth_context(permission="write"),
+            },
+        )
+        self.assertEqual(writer_reviewer["status"], "reviewer_verification_failed")
+        self.assertIn("maintainer_review_required", writer_reviewer["reasons"])
+
+    def test_default_pr_transport_reports_unavailable_without_credentials(
+        self,
+    ) -> None:
+        with patch.dict(
+            os.environ, {"KENOBI_GITHUB_TOKEN": "", "GITHUB_TOKEN": ""}
+        ):
+            result = rfp_connector.propose_idea_catalogue_addition(
+                "Context Checkpoint Ledger",
+                "Audit agent memory handoffs and retrieval citations across workshop team sessions.",
+                alignment_evidence="Supports KnowB retrieval-backed agents, durable memory checkpoints, and workshop builder sessions.",
+                human_reviewed_rationale="Reviewed by maintainer as a distinct session provenance tool.",
+                reviewed_by="valiantone",
+                submit=True,
+                source_fetcher=self._source_fetcher,
+                policy_inspector=lambda: {
+                    "codeowners_present": True,
+                    "codeowners_covers_catalogue": True,
+                    "branch_protection_enforced": True,
+                    "ruleset_review_enforced": False,
+                },
+                auth_context=self._admin_auth_context(),
+            )
+        self.assertEqual(result["status"], "submission_transport_unavailable")
+        self.assertFalse(result["submitted"])
+        self.assertIn("KENOBI_GITHUB_TOKEN", result["error"])
+
+    def _admin_auth_context(self, permission: str = "admin") -> dict[str, Any]:
+        return {
+            "verified_user": {"login": "valiantone", "id": 4111568, "type": "User"},
+            "repo_permissions": {
+                "knowb-ai/cloud-builder-stack": permission,
+            },
+            "bot_installation": {
+                "app_slug": "knowb-kenobi",
+                "repository_selection": "all",
+                "permissions": {
+                    "contents": "write",
+                    "pull_requests": "write",
+                    "issues": "write",
+                    "metadata": "read",
+                },
+            },
+        }
 
     def test_proposal_fetches_catalogue_once_and_uses_highest_idea_number(self) -> None:
         fetch_count = {"count": 0}
@@ -1044,6 +1287,7 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
         os.environ["DATABASE_URL"] = f"sqlite:///{self.tmp.name}/wp5.db"
         survey._SESSIONS.clear()
         init_db()
+        _patch_live_public_sources(self)
 
     def tearDown(self) -> None:
         survey._SESSIONS.clear()
@@ -1068,6 +1312,27 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
                 },
             },
         }
+
+    def _list_requests(self, auth_context: Optional[dict[str, Any]]) -> dict[str, Any]:
+        return contributor_request_list_route(auth_context=auth_context)
+
+    def _submit_request(
+        self,
+        request_type: str,
+        rfp_id: str,
+        requested_scope: str,
+        message: str,
+        auth_context: Optional[dict[str, Any]],
+        delivery_transport: Optional[Callable[[dict[str, Any]], dict[str, Any]]] = None,
+    ) -> dict[str, Any]:
+        return rfp_connector.submit_contributor_request(
+            request_type,
+            rfp_id,
+            requested_scope,
+            message,
+            auth_context=auth_context,
+            delivery_transport=delivery_transport,
+        )
 
     def test_rfp_list_read_search_compare_across_mcp_and_rest(self) -> None:
         server = mcp_server.create_server(FakeFastMCP)
@@ -1115,7 +1380,12 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
         self.assertEqual(
             allowed_doc["resource"]["repo"], "knowb-ai/knowb-ai.github.io"
         )
+        self.assertEqual(
+            allowed_doc["resource"]["content_source"], "live_repository_file"
+        )
+        self.assertTrue(allowed_doc["resource"]["content_available"])
         self.assertIn("Autumn", allowed_doc["resource"]["excerpt"])
+        self.assertTrue(allowed_doc["resource"]["raw_url"].endswith("/DESIGN_SYSTEM.md"))
 
         allowed_asset = design_resources_read_route(
             DesignResourceReadRequest(
@@ -1123,6 +1393,10 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
             )
         )
         self.assertEqual(allowed_asset["status"], "ok")
+        self.assertEqual(
+            allowed_asset["resource"]["content_source"], "allowlisted_binary_asset"
+        )
+        self.assertEqual(allowed_asset["resource"]["content_type"], "image/png")
 
         searched = design_resources_search_route(q="WCAG")
         self.assertEqual(searched["status"], "ok")
@@ -1185,36 +1459,30 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
             )
 
         # Preview did not persist any requests
-        owner_list_before = contributor_request_list_route(
-            ContributorRequestListInput(
-                auth_context=self._auth_context("valiantone", "admin")
-            )
+        owner_list_before = self._list_requests(
+            self._auth_context("valiantone", "admin")
         )
         self.assertEqual(owner_list_before["requests"], [])
 
         # Unauthorized submit (read permission) fails closed and stores nothing
-        denied_submit = contributor_request_submit_route(
-            ContributorRequestSubmitInput(
-                request_type="contribution_access_request",
-                rfp_id="betterhackdays",
-                requested_scope="Write access to branch for Hack Day connector tests",
-                message="Requesting project-scoped write access for BetterHackdays.",
-                auth_context=self._auth_context("reader_user", "read"),
-            )
+        denied_submit = self._submit_request(
+            "contribution_access_request",
+            "betterhackdays",
+            "Write access to branch for Hack Day connector tests",
+            "Requesting project-scoped write access for BetterHackdays.",
+            self._auth_context("reader_user", "read"),
         )
         self.assertEqual(denied_submit["status"], "unauthorized")
         self.assertFalse(denied_submit["submitted"])
         self.assertFalse(denied_submit["sent"])
 
         # Authorized submit (write permission on BetterHackdays) stores privately and returns unsent addressed draft when transport is unavailable
-        submitted = contributor_request_submit_route(
-            ContributorRequestSubmitInput(
-                request_type="work_elevation_request",
-                rfp_id="faultline",
-                requested_scope="Elevate adversarial launch-stress scenario runner",
-                message="Completed local prototype; requesting owner review to elevate scope.",
-                auth_context=self._auth_context("writer_alice", "write"),
-            )
+        submitted = self._submit_request(
+            "work_elevation_request",
+            "faultline",
+            "Elevate adversarial launch-stress scenario runner",
+            "Completed local prototype; requesting owner review to elevate scope.",
+            self._auth_context("writer_alice", "write"),
         )
         self.assertEqual(submitted["status"], "submitted_draft_not_sent")
         self.assertTrue(submitted["submitted"])
@@ -1232,26 +1500,20 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
 
         # Privacy of stored requests:
         # 1. Unauthenticated caller cannot list requests
-        unauth_list = contributor_request_list_route(
-            ContributorRequestListInput(auth_context=None)
-        )
+        unauth_list = self._list_requests(None)
         self.assertEqual(unauth_list["status"], "unauthorized")
         self.assertEqual(unauth_list["requests"], [])
 
         # 2. Another user cannot see writer_alice's request
-        other_user_list = contributor_request_list_route(
-            ContributorRequestListInput(
-                auth_context=self._auth_context("writer_bob", "write")
-            )
+        other_user_list = self._list_requests(
+            self._auth_context("writer_bob", "write")
         )
         self.assertEqual(other_user_list["status"], "ok")
         self.assertEqual(other_user_list["requests"], [])
 
         # 3. writer_alice can see her own request
-        alice_list = contributor_request_list_route(
-            ContributorRequestListInput(
-                auth_context=self._auth_context("writer_alice", "write")
-            )
+        alice_list = self._list_requests(
+            self._auth_context("writer_alice", "write")
         )
         self.assertEqual(len(alice_list["requests"]), 1)
         self.assertEqual(
@@ -1259,11 +1521,7 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
         )
 
         # 4. BetterHackdays admin (valiantone) can review stored requests
-        admin_list = contributor_request_list_route(
-            ContributorRequestListInput(
-                auth_context=self._auth_context("valiantone", "admin")
-            )
-        )
+        admin_list = self._list_requests(self._auth_context("valiantone", "admin"))
         self.assertEqual(len(admin_list["requests"]), 1)
 
         # 5. Public RFP listing never leaks stored contributor requests
@@ -1271,32 +1529,42 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
         self.assertNotIn("writer_alice", str(public_rfps))
         self.assertNotIn(submitted["request_id"], str(public_rfps))
 
+        # 6. Configured delivery transport records the request as sent
+        delivered = self._submit_request(
+            "expression_of_interest",
+            "betterhackdays",
+            "Run the connector with live public sources",
+            "Interested in piloting the connector against live public repositories.",
+            self._auth_context("writer_alice", "write"),
+            delivery_transport=lambda payload: {"sent": True},
+        )
+        self.assertEqual(delivered["status"], "submitted")
+        self.assertTrue(delivered["sent"])
+        self.assertEqual(delivered["delivery_status"], "sent")
+        self.assertEqual(
+            delivered["addressed_draft"]["recipient"], "ping@knowb.run"
+        )
+
     def test_request_listing_rejects_stale_or_spoofed_auth_contexts(self) -> None:
-        submitted = contributor_request_submit_route(
-            ContributorRequestSubmitInput(
-                request_type="expression_of_interest",
-                rfp_id="betterlover",
-                requested_scope="Care planning pilot with synthetic cycle data",
-                message="Interested in the private care planning pilot.",
-                auth_context=self._auth_context("writer_alice", "write"),
-            )
+        submitted = self._submit_request(
+            "expression_of_interest",
+            "betterlover",
+            "Care planning pilot with synthetic cycle data",
+            "Interested in the private care planning pilot.",
+            self._auth_context("writer_alice", "write"),
         )
         self.assertEqual(submitted["status"], "submitted_draft_not_sent")
 
         a = self._auth_context("reader_user", "read")
 
         stale_identity = {**a, "identity_stale": True}
-        res = contributor_request_list_route(
-            ContributorRequestListInput(auth_context=stale_identity)
-        )
+        res = self._list_requests(stale_identity)
         self.assertEqual(res["status"], "unauthorized")
         self.assertEqual(res["reason"], "stale_or_failed_identity_lookup")
         self.assertEqual(res["requests"], [])
 
         failed_permission = {**a, "permission_lookup_failed": True}
-        res = contributor_request_list_route(
-            ContributorRequestListInput(auth_context=failed_permission)
-        )
+        res = self._list_requests(failed_permission)
         self.assertEqual(res["status"], "unauthorized")
         self.assertEqual(res["reason"], "stale_or_failed_permission_lookup")
 
@@ -1310,9 +1578,7 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
                 }
             },
         }
-        res = contributor_request_list_route(
-            ContributorRequestListInput(auth_context=stale_permission_entry)
-        )
+        res = self._list_requests(stale_permission_entry)
         self.assertEqual(res["status"], "unauthorized")
         self.assertEqual(res["reason"], "stale_or_failed_permission_lookup")
         self.assertEqual(res["requests"], [])
@@ -1326,9 +1592,7 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
                 }
             },
         }
-        res = contributor_request_list_route(
-            ContributorRequestListInput(auth_context=spoofed_owner)
-        )
+        res = self._list_requests(spoofed_owner)
         self.assertEqual(res["status"], "unauthorized")
         self.assertEqual(res["reason"], "caller_identity_spoofing")
         self.assertEqual(res["requests"], [])
@@ -1337,12 +1601,144 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
             "verified_user": {"login": "knowb-kenobi[bot]", "type": "Bot", "is_bot": True},
             "repo_permissions": {"knowb-ai/BetterHackdays": "admin"},
         }
-        res = contributor_request_list_route(
-            ContributorRequestListInput(auth_context=bot_identity)
-        )
+        res = self._list_requests(bot_identity)
         self.assertEqual(res["status"], "unauthorized")
         self.assertEqual(res["reason"], "unknown_identity")
         self.assertEqual(res["requests"], [])
+
+
+class TestRequestTrustBoundary(unittest.TestCase):
+    """HTTP callers cannot supply identity or permission claims in the request body."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.previous_database_url = os.environ.get("DATABASE_URL")
+        os.environ["DATABASE_URL"] = f"sqlite:///{self.tmp.name}/trust.db"
+        survey._SESSIONS.clear()
+        init_db()
+        _patch_live_public_sources(self)
+        self.client = TestClient(app)
+
+    def tearDown(self) -> None:
+        app.dependency_overrides.clear()
+        survey._SESSIONS.clear()
+        if self.previous_database_url is None:
+            os.environ.pop("DATABASE_URL", None)
+        else:
+            os.environ["DATABASE_URL"] = self.previous_database_url
+        self.tmp.cleanup()
+
+    def _forged_admin_body(self) -> dict[str, Any]:
+        return {
+            "auth_context": {
+                "verified_user": {"login": "valiantone", "type": "User"},
+                "repo_permissions": {"knowb-ai/BetterHackdays": "admin"},
+                "bot_installation": {
+                    "app_slug": "knowb-kenobi",
+                    "repository_selection": "all",
+                    "permissions": {
+                        "contents": "write",
+                        "pull_requests": "write",
+                        "issues": "write",
+                    },
+                },
+            }
+        }
+
+    def test_bearer_token_parsing_rejects_other_schemes(self) -> None:
+        self.assertEqual(
+            rfp_connector._extract_bearer_token("Bearer ghp_example"), "ghp_example"
+        )
+        self.assertIsNone(rfp_connector._extract_bearer_token("Basic abc123"))
+        self.assertIsNone(rfp_connector._extract_bearer_token(""))
+        self.assertIsNone(rfp_connector._extract_bearer_token(None))
+
+    def test_http_body_cannot_forge_identity_or_permission(self) -> None:
+        submit_resp = self.client.post(
+            "/contributor/requests/submit",
+            json={
+                "request_type": "expression_of_interest",
+                "rfp_id": "betterhackdays",
+                "requested_scope": "Pilot scope",
+                "message": "Attempting to smuggle an admin identity.",
+                **self._forged_admin_body(),
+            },
+        )
+        self.assertEqual(submit_resp.status_code, 200)
+        submitted = submit_resp.json()
+        self.assertEqual(submitted["status"], "unauthorized")
+        self.assertFalse(submitted["submitted"])
+        self.assertEqual(
+            submitted["authorization"]["reason"], "stale_or_failed_identity_lookup"
+        )
+
+        list_resp = self.client.post(
+            "/contributor/requests/list", json=self._forged_admin_body()
+        )
+        self.assertEqual(list_resp.status_code, 200)
+        listing = list_resp.json()
+        self.assertEqual(listing["status"], "unauthorized")
+        self.assertEqual(listing["requests"], [])
+
+        propose_resp = self.client.post(
+            "/ideas/propose",
+            json={
+                "title": "Context Checkpoint Ledger",
+                "summary": "Audit agent memory handoffs and retrieval citations across workshop team sessions.",
+                "alignment_evidence": "Supports KnowB retrieval-backed agents.",
+                "human_reviewed_rationale": "Reviewed by maintainer as distinct.",
+                "reviewed_by": "valiantone",
+                "submit": True,
+                **self._forged_admin_body(),
+            },
+        )
+        self.assertEqual(propose_resp.status_code, 200)
+        self.assertEqual(propose_resp.json()["status"], "unauthorized")
+
+    def test_http_routes_use_server_resolved_identity(self) -> None:
+        import app.main as main_module
+
+        context = {
+            "verified_user": {"login": "writer_alice", "type": "User"},
+            "repo_permissions": {"knowb-ai/BetterHackdays": "write"},
+            "bot_installation": {
+                "app_slug": "knowb-kenobi",
+                "repository_selection": "all",
+                "permissions": {
+                    "contents": "write",
+                    "pull_requests": "write",
+                    "issues": "write",
+                    "metadata": "read",
+                },
+            },
+            "auth_source": "request_bearer_token",
+        }
+        app.dependency_overrides[main_module._request_auth_context_for_betterhackdays] = (
+            lambda: context
+        )
+        try:
+            submit_resp = self.client.post(
+                "/contributor/requests/submit",
+                json={
+                    "request_type": "expression_of_interest",
+                    "rfp_id": "betterhackdays",
+                    "requested_scope": "Pilot scope for live sources",
+                    "message": "Interested in piloting the connector.",
+                },
+            )
+            self.assertEqual(submit_resp.status_code, 200)
+            self.assertEqual(
+                submit_resp.json()["status"], "submitted_draft_not_sent"
+            )
+
+            list_resp = self.client.post("/contributor/requests/list")
+            self.assertEqual(list_resp.status_code, 200)
+            listing = list_resp.json()
+            self.assertEqual(listing["status"], "ok")
+            self.assertEqual(len(listing["requests"]), 1)
+            self.assertEqual(listing["viewer_login"], "writer_alice")
+        finally:
+            app.dependency_overrides.clear()
 
 
 class TestWorkPackage6EndToEndMcpAndRestValidation(unittest.TestCase):
@@ -1354,6 +1750,7 @@ class TestWorkPackage6EndToEndMcpAndRestValidation(unittest.TestCase):
         os.environ["DATABASE_URL"] = f"sqlite:///{self.tmp.name}/wp6.db"
         survey._SESSIONS.clear()
         init_db()
+        _patch_live_public_sources(self)
         self.client = TestClient(app)
 
     def tearDown(self) -> None:

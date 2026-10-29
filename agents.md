@@ -38,8 +38,8 @@ The repo is currently centered on the BetterHackdays matchmaking backend, with a
 
 ### Current repo shape
 
-- `README.md` describes the matchmaking backend.
-- `app/` contains the FastAPI service and matchmaking engine.
+- `README.md` describes the matchmaking backend and RFP connector surfaces.
+- `app/` contains the FastAPI service, matchmaking engine, and KnowB RFP and contributor connector (`app/rfp_connector.py`).
 - `client/` contains the terminal-side client.
 - `docs/` now holds the planning stubs for the broader product.
 

@@ -232,6 +232,21 @@ planning
 slug and room resolution
   POST /slug/resolve
 
+rfp and contributor connector
+  GET  /rfps
+  GET  /rfps/search
+  POST /rfps/compare
+  GET  /rfps/{rfp_id}
+  GET  /design-resources
+  GET  /design-resources/search
+  POST /design-resources/read
+  GET  /ideas/catalogue
+  POST /ideas/qualify
+  POST /ideas/propose
+  POST /contributor/requests/preview
+  POST /contributor/requests/submit
+  POST /contributor/requests/list
+
 health
   GET /health
 ```

@@ -51,6 +51,21 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     "generate_process_timeline": "Generate a deadline-aware Hack Day execution timeline.",
     "generate_prep_checklist": "Generate immediate prep tasks and first-hour focus.",
     "resolve_slug": "Resolve Hack Day codes, standalone slugs, and room keywords.",
+    "list_project_rfps": "List approved KnowB project RFPs and public resources separately from idea suggestions.",
+    "read_project_rfp": "Read a single approved KnowB project RFP brief by ID or title.",
+    "search_project_rfps": "Search approved KnowB project RFPs and optionally allowlisted public design resources.",
+    "compare_project_rfps": "Compare two or more approved KnowB project RFPs side-by-side.",
+    "list_design_resources": "List explicitly allowlisted public design philosophy documents and assets from knowb-ai.github.io.",
+    "read_design_resource": "Read an allowlisted public design philosophy document or asset from knowb-ai.github.io.",
+    "search_design_resources": "Search allowlisted public design philosophy documents and assets.",
+    "fetch_idea_catalogue": "Fetch the canonical Cloud Builder Stack idea catalogue live and return ideation-only suggestions.",
+    "qualify_idea": "Deterministically qualify a candidate idea against the canonical catalogue, open public projects, and showcase.",
+    "propose_idea_catalogue_addition": "Preview and optionally submit a qualified, human-reviewed idea as a PR to Cloud Builder Stack.",
+    "preview_contributor_request": "Preview a refinement draft, expression of interest, contribution-access request, or work-elevation request.",
+    "submit_contributor_request": "Submit a contributor request after verifying caller identity and write permission on BetterHackdays.",
+    "list_contributor_requests": "List private contributor requests for the verified requester or a verified BetterHackdays maintainer/admin.",
+    "authorize_github_mutation": "Verify authenticated human identity, exact repository permission, and Kenobi scope before any GitHub write.",
+    "grant_repository_access": "Separate owner-only, explicitly confirmed repository access grant scoped to an allowlisted repository.",
 }
 
 

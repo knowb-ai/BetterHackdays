@@ -26,8 +26,13 @@ from . import mcp_tools, survey
 from .db import init_db
 from .models import (
     CardsResponse,
+    CompareRfpsRequest,
     ConnectRequest,
     ConnectResponse,
+    ContributorRequestListInput,
+    ContributorRequestPreviewInput,
+    ContributorRequestSubmitInput,
+    DesignResourceReadRequest,
     EventIngestResponse,
     EventIngestTextRequest,
     HarnessId,
@@ -42,6 +47,8 @@ from .models import (
     PrepChecklistResponse,
     ProcessTimelineRequest,
     ProcessTimelineResponse,
+    ProposeIdeaCatalogueRequest,
+    QualifyIdeaRequest,
     SlugResolveRequest,
     SlugResolveResponse,
     SwipeRequest,
@@ -288,3 +295,118 @@ def survey_state(
         question=result.get("question"),
         done=result["done"],
     )
+
+
+# --- KnowB RFP, design resources, idea catalogue, and contributor connector --
+
+
+@app.get("/rfps")
+def rfps_list(
+    visibility: str | None = Query(
+        default=None,
+        description="Optional visibility filter (e.g. public_website or connector_only)",
+    ),
+) -> dict:
+    return mcp_tools.list_project_rfps(visibility=visibility)
+
+
+@app.get("/rfps/search")
+def rfps_search(
+    q: str = Query(..., description="Search query across approved RFPs"),
+    include_design_resources: bool = Query(default=False),
+) -> dict:
+    return mcp_tools.search_project_rfps(
+        query=q,
+        include_design_resources=include_design_resources,
+    )
+
+
+@app.post("/rfps/compare")
+def rfps_compare(req: CompareRfpsRequest) -> dict:
+    return mcp_tools.compare_project_rfps(rfp_ids=req.rfp_ids)
+
+
+@app.get("/rfps/{rfp_id}")
+def rfps_read(rfp_id: str) -> dict:
+    return mcp_tools.read_project_rfp(rfp_id=rfp_id)
+
+
+@app.get("/design-resources")
+def design_resources_list() -> dict:
+    return mcp_tools.list_design_resources()
+
+
+@app.get("/design-resources/search")
+def design_resources_search(
+    q: str = Query(..., description="Search query across allowlisted design resources"),
+) -> dict:
+    return mcp_tools.search_design_resources(query=q)
+
+
+@app.post("/design-resources/read")
+def design_resources_read(req: DesignResourceReadRequest) -> dict:
+    return mcp_tools.read_design_resource(path=req.path, repo=req.repo)
+
+
+@app.get("/ideas/catalogue")
+def ideas_catalogue(
+    q: str | None = Query(default=None),
+    section: str | None = Query(default=None),
+    limit: int | None = Query(default=None),
+) -> dict:
+    return mcp_tools.fetch_idea_catalogue(query=q, section=section, limit=limit)
+
+
+@app.post("/ideas/qualify")
+def ideas_qualify(req: QualifyIdeaRequest) -> dict:
+    return mcp_tools.qualify_idea(
+        title=req.title,
+        summary=req.summary,
+        alignment_evidence=req.alignment_evidence,
+        human_reviewed_rationale=req.human_reviewed_rationale,
+        reviewed_by=req.reviewed_by,
+    )
+
+
+@app.post("/ideas/propose")
+def ideas_propose(req: ProposeIdeaCatalogueRequest) -> dict:
+    return mcp_tools.propose_idea_catalogue_addition(
+        title=req.title,
+        summary=req.summary,
+        alignment_evidence=req.alignment_evidence,
+        human_reviewed_rationale=req.human_reviewed_rationale,
+        reviewed_by=req.reviewed_by,
+        section=req.section,
+        submit=req.submit,
+        auth_context=req.auth_context,
+    )
+
+
+@app.post("/contributor/requests/preview")
+def contributor_request_preview(req: ContributorRequestPreviewInput) -> dict:
+    return mcp_tools.preview_contributor_request(
+        request_type=req.request_type,
+        rfp_id=req.rfp_id,
+        requested_scope=req.requested_scope,
+        message=req.message,
+    )
+
+
+@app.post("/contributor/requests/submit")
+def contributor_request_submit(req: ContributorRequestSubmitInput) -> dict:
+    return mcp_tools.submit_contributor_request(
+        request_type=req.request_type,
+        rfp_id=req.rfp_id,
+        requested_scope=req.requested_scope,
+        message=req.message,
+        target_repo=req.target_repo,
+        caller_supplied_login=req.caller_supplied_login,
+        asserted_role=req.asserted_role,
+        auth_context=req.auth_context,
+    )
+
+
+@app.post("/contributor/requests/list")
+def contributor_request_list(req: ContributorRequestListInput) -> dict:
+    return mcp_tools.list_contributor_requests(auth_context=req.auth_context)
+

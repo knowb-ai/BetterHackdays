@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from . import event_ingest, matchmaking, planner, slug_resolution
+from . import event_ingest, matchmaking, planner, rfp_connector, slug_resolution
 from .db import _dumps, _loads, _row_to_dict, get_conn
 
 
@@ -292,6 +292,251 @@ def resolve_slug(
     )
 
 
+def list_project_rfps(
+    visibility: Optional[str] = None,
+    repo_metadata: Optional[list[dict[str, Any]]] = None,
+    readme_fetcher: Optional[Any] = None,
+) -> dict[str, Any]:
+    """List approved KnowB project RFPs and public resources separately from idea suggestions."""
+    return rfp_connector.list_project_rfps(
+        visibility=visibility,
+        repo_metadata=repo_metadata,
+        readme_fetcher=readme_fetcher,
+    )
+
+
+def read_project_rfp(
+    rfp_id: str,
+    repo_metadata: Optional[list[dict[str, Any]]] = None,
+    readme_fetcher: Optional[Any] = None,
+) -> dict[str, Any]:
+    """Read a single approved KnowB project RFP brief by ID or title."""
+    return rfp_connector.read_project_rfp(
+        rfp_id,
+        repo_metadata=repo_metadata,
+        readme_fetcher=readme_fetcher,
+    )
+
+
+def search_project_rfps(
+    query: str,
+    include_design_resources: bool = False,
+    repo_metadata: Optional[list[dict[str, Any]]] = None,
+    readme_fetcher: Optional[Any] = None,
+) -> dict[str, Any]:
+    """Search approved project RFPs and optionally allowlisted public design resources."""
+    return rfp_connector.search_project_rfps(
+        query,
+        include_design_resources=include_design_resources,
+        repo_metadata=repo_metadata,
+        readme_fetcher=readme_fetcher,
+    )
+
+
+def compare_project_rfps(
+    rfp_ids: list[str],
+    repo_metadata: Optional[list[dict[str, Any]]] = None,
+    readme_fetcher: Optional[Any] = None,
+) -> dict[str, Any]:
+    """Compare two or more approved KnowB project RFPs side-by-side."""
+    return rfp_connector.compare_project_rfps(
+        rfp_ids,
+        repo_metadata=repo_metadata,
+        readme_fetcher=readme_fetcher,
+    )
+
+
+def list_design_resources() -> dict[str, Any]:
+    """List explicitly allowlisted public design philosophy documents and assets from knowb-ai.github.io."""
+    return rfp_connector.list_design_resources()
+
+
+def read_design_resource(
+    path: str,
+    repo: str = rfp_connector.DESIGN_RESOURCE_REPO,
+    content_fetcher: Optional[Any] = None,
+) -> dict[str, Any]:
+    """Read an allowlisted public design philosophy document or asset from knowb-ai.github.io."""
+    return rfp_connector.read_design_resource(
+        path,
+        repo=repo,
+        content_fetcher=content_fetcher,
+    )
+
+
+def search_design_resources(query: str) -> dict[str, Any]:
+    """Search allowlisted public design philosophy documents and assets."""
+    return rfp_connector.search_design_resources(query)
+
+
+def fetch_idea_catalogue(
+    query: Optional[str] = None,
+    section: Optional[str] = None,
+    limit: Optional[int] = None,
+    source_fetcher: Optional[Any] = None,
+) -> dict[str, Any]:
+    """Fetch the canonical Cloud Builder Stack idea catalogue live and return suggestions separately from RFPs."""
+    return rfp_connector.fetch_idea_catalogue(
+        query=query,
+        section=section,
+        limit=limit,
+        source_fetcher=source_fetcher,
+    )
+
+
+def qualify_idea(
+    title: str,
+    summary: str,
+    alignment_evidence: Optional[str] = None,
+    human_reviewed_rationale: Optional[str] = None,
+    reviewed_by: Optional[str] = None,
+    source_fetcher: Optional[Any] = None,
+    repo_metadata: Optional[list[dict[str, Any]]] = None,
+    readme_fetcher: Optional[Any] = None,
+) -> dict[str, Any]:
+    """Deterministically qualify a candidate idea against the canonical catalogue, open public projects, and showcase."""
+    return rfp_connector.qualify_idea(
+        title,
+        summary,
+        alignment_evidence=alignment_evidence,
+        human_reviewed_rationale=human_reviewed_rationale,
+        reviewed_by=reviewed_by,
+        source_fetcher=source_fetcher,
+        repo_metadata=repo_metadata,
+        readme_fetcher=readme_fetcher,
+    )
+
+
+def propose_idea_catalogue_addition(
+    title: str,
+    summary: str,
+    alignment_evidence: Optional[str] = None,
+    human_reviewed_rationale: Optional[str] = None,
+    reviewed_by: Optional[str] = None,
+    section: str = "10. Stronger Actual AI System Ideas",
+    submit: bool = False,
+    source_fetcher: Optional[Any] = None,
+    repo_metadata: Optional[list[dict[str, Any]]] = None,
+    readme_fetcher: Optional[Any] = None,
+    policy_inspector: Optional[Any] = None,
+    policy_pr_url: Optional[str] = None,
+    auth_context: Optional[dict[str, Any]] = None,
+    pr_submitter: Optional[Any] = None,
+) -> dict[str, Any]:
+    """Preview and optionally submit a qualified, human-reviewed idea as a PR to Cloud Builder Stack."""
+    return rfp_connector.propose_idea_catalogue_addition(
+        title,
+        summary,
+        alignment_evidence=alignment_evidence,
+        human_reviewed_rationale=human_reviewed_rationale,
+        reviewed_by=reviewed_by,
+        section=section,
+        submit=submit,
+        source_fetcher=source_fetcher,
+        repo_metadata=repo_metadata,
+        readme_fetcher=readme_fetcher,
+        policy_inspector=policy_inspector,
+        policy_pr_url=policy_pr_url,
+        auth_context=auth_context,
+        pr_submitter=pr_submitter,
+    )
+
+
+def preview_contributor_request(
+    request_type: str,
+    rfp_id: str,
+    requested_scope: str,
+    message: str,
+    repo_metadata: Optional[list[dict[str, Any]]] = None,
+    readme_fetcher: Optional[Any] = None,
+) -> dict[str, Any]:
+    """Preview a refinement draft, expression of interest, contribution-access request, or work-elevation request."""
+    return rfp_connector.preview_contributor_request(
+        request_type,
+        rfp_id,
+        requested_scope,
+        message,
+        repo_metadata=repo_metadata,
+        readme_fetcher=readme_fetcher,
+    )
+
+
+def submit_contributor_request(
+    request_type: str,
+    rfp_id: str,
+    requested_scope: str,
+    message: str,
+    target_repo: str = rfp_connector.BETTERHACKDAYS_REPO,
+    caller_supplied_login: Optional[str] = None,
+    asserted_role: Optional[str] = None,
+    auth_context: Optional[dict[str, Any]] = None,
+    delivery_transport: Optional[Any] = None,
+    repo_metadata: Optional[list[dict[str, Any]]] = None,
+    readme_fetcher: Optional[Any] = None,
+) -> dict[str, Any]:
+    """Submit a contributor request after verifying caller identity and write/maintain/admin permission on BetterHackdays."""
+    return rfp_connector.submit_contributor_request(
+        request_type,
+        rfp_id,
+        requested_scope,
+        message,
+        target_repo=target_repo,
+        caller_supplied_login=caller_supplied_login,
+        asserted_role=asserted_role,
+        auth_context=auth_context,
+        delivery_transport=delivery_transport,
+        repo_metadata=repo_metadata,
+        readme_fetcher=readme_fetcher,
+    )
+
+
+def list_contributor_requests(
+    auth_context: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    """List private contributor requests for the verified requester or a verified BetterHackdays maintainer/admin."""
+    return rfp_connector.list_contributor_requests(auth_context=auth_context)
+
+
+def authorize_github_mutation(
+    operation: str,
+    target_repo: str,
+    expected_target_repo: Optional[str] = None,
+    caller_supplied_login: Optional[str] = None,
+    asserted_role: Optional[str] = None,
+    auth_context: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    """Verify caller GitHub identity, target repository permission, and Kenobi installation scope before a mutation."""
+    return rfp_connector.authorize_github_mutation(
+        operation=operation,
+        target_repo=target_repo,
+        expected_target_repo=expected_target_repo,
+        caller_supplied_login=caller_supplied_login,
+        asserted_role=asserted_role,
+        auth_context=auth_context,
+    )
+
+
+def grant_repository_access(
+    target_repo: str,
+    grantee_login: str,
+    permission: str = "write",
+    requester_login: Optional[str] = None,
+    confirmed: bool = False,
+    auth_context: Optional[dict[str, Any]] = None,
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    """Separate owner-only, explicitly confirmed repository access grant scoped to an allowlisted repository."""
+    return rfp_connector.grant_repository_access(
+        target_repo=target_repo,
+        grantee_login=grantee_login,
+        permission=permission,
+        requester_login=requester_login,
+        confirmed=confirmed,
+        auth_context=auth_context,
+        dry_run=dry_run,
+    )
+
+
 # Registry for a future MCP server to enumerate and register these as tools.
 MCP_TOOLS = {
     "connect_harness": connect_harness,
@@ -308,4 +553,19 @@ MCP_TOOLS = {
     "generate_process_timeline": generate_process_timeline,
     "generate_prep_checklist": generate_prep_checklist,
     "resolve_slug": resolve_slug,
+    "list_project_rfps": list_project_rfps,
+    "read_project_rfp": read_project_rfp,
+    "search_project_rfps": search_project_rfps,
+    "compare_project_rfps": compare_project_rfps,
+    "list_design_resources": list_design_resources,
+    "read_design_resource": read_design_resource,
+    "search_design_resources": search_design_resources,
+    "fetch_idea_catalogue": fetch_idea_catalogue,
+    "qualify_idea": qualify_idea,
+    "propose_idea_catalogue_addition": propose_idea_catalogue_addition,
+    "preview_contributor_request": preview_contributor_request,
+    "submit_contributor_request": submit_contributor_request,
+    "list_contributor_requests": list_contributor_requests,
+    "authorize_github_mutation": authorize_github_mutation,
+    "grant_repository_access": grant_repository_access,
 }

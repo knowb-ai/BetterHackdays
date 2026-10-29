@@ -22,14 +22,14 @@
       "title": "BetterHackdays",
       "source_path": "README.md",
       "okf_path": ".okf/README.okf.json",
-      "sha256": "91a9a6a659a887d2ad25a148194c5a4a96fb04d464fd32c3b2a368743e8d0d51"
+      "sha256": "0a955c23c64e52f15a36cefa87fbd4c2c65c19594321a2fbc1bed3416dbd1a34"
     },
     {
       "id": "betterhackdays.repo.agents",
       "title": "Agentic Development Guidelines",
       "source_path": "agents.md",
       "okf_path": ".okf/agents.okf.json",
-      "sha256": "f9b32562137d721a49a8a6580452289bd5d186aa5af922a69e9ec7f411fee48e"
+      "sha256": "b9b3c140126ab0881228ac65f339ebd8b8b161bdd9fca07d1a40590eacfba735"
     },
     {
       "id": "betterhackdays.docs.README",
@@ -92,7 +92,7 @@
       "title": "MCP Server",
       "source_path": "docs/mcp-server.md",
       "okf_path": "docs/.okf/mcp-server.okf.json",
-      "sha256": "6c82cc9dc06cf146cb1c11ce7aa27b28ff65447c8f64b3e6d885ae1201d68977"
+      "sha256": "e1847b2c5f6d9123ad24027641569dd8f181d9da305025c53192a9e6cb79ef0f"
     },
     {
       "id": "betterhackdays.docs.mvp-scope",

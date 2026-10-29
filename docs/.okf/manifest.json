@@ -71,7 +71,7 @@
       "title": "MCP Server",
       "source_path": "docs/mcp-server.md",
       "okf_path": "docs/.okf/mcp-server.okf.json",
-      "sha256": "6c82cc9dc06cf146cb1c11ce7aa27b28ff65447c8f64b3e6d885ae1201d68977"
+      "sha256": "e1847b2c5f6d9123ad24027641569dd8f181d9da305025c53192a9e6cb79ef0f"
     },
     {
       "id": "betterhackdays.docs.mvp-scope",

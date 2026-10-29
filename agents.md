@@ -52,7 +52,19 @@ The repo is currently centered on the BetterHackdays matchmaking backend, with a
 - Keep governed knowledge files aligned with the repo OKF contract in `.okf/manifest.json`.
 - When changing `README.md`, `agents.md`, or `docs/*.md`, update the matching OKF sidecar checksums.
 - Run `python scripts/validate_okf.py` before handoff when governed knowledge files change.
+- Run `.venv/bin/python -m unittest discover -s tests -v` before handoff.
 - Verify the result before handing off.
+
+## Connector boundaries
+
+- Never accept caller-supplied identity, role, or permission claims. REST writes
+  resolve a bearer token and MCP writes resolve `GITHUB_TOKEN`, both live.
+- Keep public source fetchers live in production defaults. Tests patch them so
+  the suite stays hermetic.
+- Do not store contributor request details publicly, and never grant repository
+  access as a side effect of a request.
+- Keep Cloud Builder Stack review enforcement gated on a CODEOWNERS rule that
+  covers `docs/fun-project-and-hackathon-ideas.md` plus required branch review.
 
 ## Writing rules
 

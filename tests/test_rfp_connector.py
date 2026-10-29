@@ -1869,6 +1869,79 @@ class TestRequestTrustBoundary(unittest.TestCase):
         self.assertEqual(access_req["status"], "submitted_draft_not_sent")
         self.assertTrue(access_req["submitted"])
 
+    def test_live_auth_context_fails_closed_on_unexpected_installation_lookup_failures(
+        self,
+    ) -> None:
+        import io
+        import json
+        import urllib.error
+
+        class _FakeResponse:
+            def __init__(self, payload: Any) -> None:
+                raw = (
+                    payload
+                    if isinstance(payload, bytes)
+                    else json.dumps(payload).encode("utf-8")
+                )
+                self._buf = io.BytesIO(raw)
+
+            def read(self) -> bytes:
+                return self._buf.read()
+
+            def __enter__(self) -> "_FakeResponse":
+                return self
+
+            def __exit__(self, *args: Any) -> None:
+                self._buf.close()
+
+        install_url = "https://api.github.com/orgs/knowb-ai/installations"
+        failures = (
+            (
+                "server_error",
+                urllib.error.HTTPError(
+                    install_url, 500, "GitHub unavailable", hdrs=None, fp=None
+                ),
+            ),
+            ("timeout", TimeoutError("GitHub request timed out")),
+            ("malformed_response", b"{"),
+        )
+
+        for label, failure in failures:
+            with self.subTest(failure=label):
+                def fake_urlopen(
+                    req: Any, timeout: float = 10.0
+                ) -> _FakeResponse:
+                    url = req.full_url
+                    if url.endswith("/user"):
+                        return _FakeResponse(
+                            {"login": "writer_alice", "id": 10, "type": "User"}
+                        )
+                    if "/collaborators/writer_alice/permission" in url:
+                        return _FakeResponse({"permission": "write"})
+                    if "/orgs/knowb-ai/installations" in url:
+                        if isinstance(failure, bytes):
+                            return _FakeResponse(failure)
+                        raise failure
+                    raise AssertionError(f"Unexpected URL: {url}")
+
+                with patch.object(
+                    rfp_connector.urllib.request, "urlopen", side_effect=fake_urlopen
+                ):
+                    context = rfp_connector.resolve_live_github_auth_context(
+                        "knowb-ai/BetterHackdays", token="ghp_writer_token"
+                    )
+
+                self.assertIsNone(context["bot_installation"])
+                authorization = rfp_connector.authorize_github_mutation(
+                    operation="pr_edit",
+                    target_repo="knowb-ai/BetterHackdays",
+                    auth_context=context,
+                )
+                self.assertFalse(authorization["authorized"])
+                self.assertEqual(
+                    authorization["reason"], "bot_installation_missing_scope"
+                )
+
     def test_registered_mcp_tools_expose_no_fixture_or_test_hook_parameters(
         self,
     ) -> None:

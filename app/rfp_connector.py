@@ -2374,14 +2374,22 @@ def resolve_live_github_auth_context(
                     "permissions": dict(inst.get("permissions") or {}),
                 }
                 break
+    except urllib.error.HTTPError as exc:
+        exc.close()
+        # The organization endpoint is owner-only. Use the known installation
+        # baseline only for that expected authorization boundary; other HTTP
+        # failures must not be mistaken for verified installation scope.
+        if exc.code in {403, 404}:
+            bot_installation = {
+                **DEFAULT_KENOBI_INSTALLATION,
+                "permissions": dict(DEFAULT_KENOBI_INSTALLATION["permissions"]),
+            }
+        else:
+            bot_installation = None
     except (urllib.error.URLError, TimeoutError, ValueError):
+        # Network, timeout, and malformed-response failures are not evidence
+        # that the installation has the baseline repository selection/scopes.
         bot_installation = None
-
-    if bot_installation is None:
-        bot_installation = {
-            **DEFAULT_KENOBI_INSTALLATION,
-            "permissions": dict(DEFAULT_KENOBI_INSTALLATION["permissions"]),
-        }
 
     return {
         "verified_user": verified_user,

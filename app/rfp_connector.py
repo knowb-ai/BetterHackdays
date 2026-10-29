@@ -12,7 +12,7 @@ import urllib.request
 from typing import Any, Callable, Optional
 import uuid
 
-from .db import _row_to_dict, get_conn, init_db
+from .db import _row_to_dict, ensure_schema, get_conn
 
 GITHUB_API_BASE = "https://api.github.com"
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com"
@@ -717,6 +717,8 @@ def build_project_rfp_catalogue(
     for rfp_id in website_order:
         entry = dict(WEBSITE_RFPS[rfp_id])
         entry["tags"] = list(entry["tags"])
+        # Reserve the RFP slug so a same-named public repo cannot emit a duplicate entry.
+        represented_repo_keys.add(rfp_id.lower())
         repo_name = entry.get("repo_name")
         if repo_name:
             repo_key = repo_name.lower()
@@ -1191,6 +1193,21 @@ def _tokenize_meaningful(text: str) -> set[str]:
     return tokens
 
 
+def _keyword_matches(keyword: str, tokens: set[str], text_lower: str) -> bool:
+    """Match a pillar keyword without substring false positives.
+
+    Single-word keywords must appear as a whole token; multi-part keywords are
+    matched as a bounded phrase across separators such as hyphens.
+    """
+    parts = [part for part in re.split(r"[^a-z0-9]+", keyword.lower()) if part]
+    if not parts:
+        return False
+    if len(parts) == 1:
+        return parts[0] in tokens
+    pattern = r"[^a-z0-9]+".join(re.escape(part) for part in parts)
+    return re.search(rf"(?<![a-z0-9]){pattern}(?![a-z0-9])", text_lower) is not None
+
+
 def qualify_idea(
     title: str,
     summary: str,
@@ -1346,7 +1363,7 @@ def qualify_idea(
         pillar_hits = [
             kw
             for kw in keywords
-            if kw in alignment_tokens or kw in combined_alignment_text
+            if _keyword_matches(kw, alignment_tokens, combined_alignment_text)
         ]
         if pillar_hits:
             matched_pillars.append(pillar)
@@ -1354,12 +1371,13 @@ def qualify_idea(
                 if hit not in matched_terms:
                     matched_terms.append(hit)
 
+    evidence_lower = clean_evidence.lower()
     evidence_tokens = _tokenize_meaningful(clean_evidence)
     evidence_pillar_hits = [
         kw
         for keywords in KNOWB_ALIGNMENT_PILLARS.values()
         for kw in keywords
-        if kw in evidence_tokens or kw in clean_evidence.lower()
+        if _keyword_matches(kw, evidence_tokens, evidence_lower)
     ]
     is_aligned = len(matched_pillars) >= 1 and len(evidence_pillar_hits) >= 1
 
@@ -1531,6 +1549,53 @@ def prepare_cloud_builder_stack_policy_pr(
     }
 
 
+def _ruleset_targets_default_branch(ruleset: dict[str, Any]) -> bool:
+    """Return True when a ruleset targets the default branch or `main`."""
+    refs: set[str] = set()
+    targets = ruleset.get("targets")
+    if isinstance(targets, list):
+        for target in targets:
+            ref = _clean_text(target.get("ref")) if isinstance(target, dict) else _clean_text(target)
+            if ref:
+                refs.add(ref)
+    conditions = ruleset.get("conditions")
+    if isinstance(conditions, dict):
+        ref_name = conditions.get("ref_name")
+        if isinstance(ref_name, dict):
+            include = ref_name.get("include")
+            if isinstance(include, list):
+                refs.update(_clean_text(item) for item in include if _clean_text(item))
+
+    allowed_refs = {
+        "~DEFAULT_BRANCH",
+        "refs/heads/~DEFAULT_BRANCH",
+        "refs/heads/main",
+        "main",
+        "default",
+    }
+    return any(ref in allowed_refs for ref in refs)
+
+
+def _ruleset_requires_code_owner_review(ruleset: dict[str, Any]) -> bool:
+    """Return True when a ruleset requires a code-owner-approved pull request."""
+    rules = ruleset.get("rules")
+    if not isinstance(rules, list):
+        return False
+    for rule in rules:
+        if not isinstance(rule, dict) or rule.get("type") != "pull_request":
+            continue
+        parameters = rule.get("parameters")
+        if not isinstance(parameters, dict):
+            continue
+        try:
+            approvals = int(parameters.get("required_approving_review_count", 0))
+        except (TypeError, ValueError):
+            approvals = 0
+        if parameters.get("require_code_owner_review") is True and approvals >= 1:
+            return True
+    return False
+
+
 def _fetch_cloud_builder_stack_policy_state(*, timeout: float = 10.0) -> dict[str, Any]:
     """Query live GitHub API for Cloud Builder Stack CODEOWNERS, branch protection, and rulesets."""
     codeowners_present = False
@@ -1587,8 +1652,25 @@ def _fetch_cloud_builder_stack_policy_state(*, timeout: float = 10.0) -> dict[st
             rulesets = json.loads(resp.read().decode("utf-8"))
             if isinstance(rulesets, list):
                 for rs in rulesets:
-                    if isinstance(rs, dict) and rs.get("enforcement") == "active":
+                    if not isinstance(rs, dict) or rs.get("enforcement") != "active":
+                        continue
+                    ruleset_id = rs.get("id")
+                    if ruleset_id is None:
+                        continue
+                    detail_url = f"{rulesets_url}/{urllib.parse.quote(str(ruleset_id))}"
+                    detail_req = urllib.request.Request(
+                        detail_url, headers=_github_headers()
+                    )
+                    try:
+                        with urllib.request.urlopen(detail_req, timeout=timeout) as detail_resp:
+                            detail = json.loads(detail_resp.read().decode("utf-8"))
+                    except (urllib.error.URLError, TimeoutError, ValueError):
+                        continue
+                    if not isinstance(detail, dict):
+                        continue
+                    if _ruleset_targets_default_branch(detail) and _ruleset_requires_code_owner_review(detail):
                         ruleset_review_enforced = True
+                        break
     except (urllib.error.URLError, TimeoutError, ValueError):
         ruleset_review_enforced = False
 
@@ -1694,13 +1776,23 @@ def propose_idea_catalogue_addition(
             "next": "remove_issue_closing_keywords",
         }
 
+    # Fetch the canonical catalogue at most once per call and reuse it for
+    # qualification and numbering so a single proposal issues one upstream read.
+    cached_markdown: list[str] = []
+
+    def _memo_source() -> str:
+        if not cached_markdown:
+            fetcher = source_fetcher or fetch_canonical_idea_catalogue_markdown
+            cached_markdown.append(fetcher())
+        return cached_markdown[0]
+
     qualification = qualify_idea(
         clean_title,
         clean_summary,
         alignment_evidence=alignment_evidence,
         human_reviewed_rationale=human_reviewed_rationale,
         reviewed_by=reviewed_by,
-        source_fetcher=source_fetcher,
+        source_fetcher=_memo_source,
         repo_metadata=repo_metadata,
         readme_fetcher=readme_fetcher,
     )
@@ -1715,8 +1807,13 @@ def propose_idea_catalogue_addition(
             "next": qualification.get("next", "revise_or_discard_candidate"),
         }
 
-    catalogue_result = fetch_idea_catalogue(source_fetcher=source_fetcher)
-    next_number = (catalogue_result.get("total_count") or 137) + 1
+    catalogue_result = fetch_idea_catalogue(source_fetcher=_memo_source)
+    existing_numbers = [
+        item["idea_number"]
+        for item in catalogue_result.get("ideas", [])
+        if isinstance(item.get("idea_number"), int)
+    ]
+    next_number = (max(existing_numbers) + 1) if existing_numbers else 138
     proposed_markdown_block = f"### {next_number}. {clean_title}\n{clean_summary}\n"
     pr_branch = f"idea/{_slugify(clean_title)}"
     pr_title = f"feat: propose {clean_title} for hackathon ideas catalogue"
@@ -1976,6 +2073,112 @@ def resolve_live_github_auth_context(
 
 
 
+def _verify_human_identity_and_repo_permission(
+    auth_context: Optional[dict[str, Any]],
+    target_repo: str,
+) -> dict[str, Any]:
+    """Validate a verified human identity and exact-repo permission record from an auth context.
+
+    Fails closed on missing, stale, or failed lookups, bot accounts, identity spoofing,
+    and permission records that do not belong to the verified human caller.
+    """
+    normalized_target = _normalize_repo_full_name(target_repo)
+
+    def _deny(reason: str, detail: str, **extra: Any) -> dict[str, Any]:
+        payload: dict[str, Any] = {"ok": False, "reason": reason, "detail": detail}
+        payload.update(extra)
+        return payload
+
+    if auth_context is None or not isinstance(auth_context, dict):
+        return _deny(
+            "unknown_identity",
+            "Authenticated GitHub identity context is missing; failing closed.",
+        )
+
+    if auth_context.get("identity_lookup_failed") or auth_context.get("identity_stale"):
+        return _deny(
+            "stale_or_failed_identity_lookup",
+            "Authenticated GitHub identity lookup failed or is stale.",
+        )
+
+    verified_identity = auth_context.get("verified_user")
+    if not isinstance(verified_identity, dict):
+        return _deny(
+            "unknown_identity",
+            "Could not resolve an authenticated human GitHub user.",
+        )
+
+    verified_login = _clean_text(verified_identity.get("login"))
+    verified_type = _clean_text(verified_identity.get("type") or "User")
+    is_bot_account = (
+        bool(verified_identity.get("is_bot"))
+        or verified_type.lower() != "user"
+        or verified_login.endswith("[bot]")
+        or verified_login.startswith("app/")
+        or verified_login.lower() in {"knowb-kenobi", "knowb-kenobi[bot]"}
+    )
+    if not verified_login or is_bot_account:
+        return _deny(
+            "unknown_identity",
+            "Authenticated identity must be a verified human GitHub user, not a bot or unknown account.",
+        )
+
+    if auth_context.get("permission_lookup_failed") or auth_context.get("permission_stale"):
+        return _deny(
+            "stale_or_failed_permission_lookup",
+            f"Permission lookup for '{verified_login}' on '{normalized_target}' failed or is stale.",
+            verified_login=verified_login,
+        )
+
+    repo_permissions = auth_context.get("repo_permissions")
+    if not isinstance(repo_permissions, dict):
+        return _deny(
+            "stale_or_failed_permission_lookup",
+            f"No verified repository permission map available for '{normalized_target}'.",
+            verified_login=verified_login,
+        )
+
+    matched_perm_entry: Any = None
+    for repo_key, perm_val in repo_permissions.items():
+        if _normalize_repo_full_name(repo_key).lower() == normalized_target.lower():
+            matched_perm_entry = perm_val
+            break
+
+    if matched_perm_entry is None:
+        return _deny(
+            "wrong_repository_mapping",
+            (
+                f"Permission was not verified for exact target repository "
+                f"'{normalized_target}'."
+            ),
+            verified_login=verified_login,
+        )
+
+    if isinstance(matched_perm_entry, dict):
+        if matched_perm_entry.get("stale") or matched_perm_entry.get("failed"):
+            return _deny(
+                "stale_or_failed_permission_lookup",
+                f"Permission record for '{normalized_target}' is stale or failed.",
+                verified_login=verified_login,
+            )
+        permission_actor = _clean_text(matched_perm_entry.get("login"))
+        if permission_actor and permission_actor.lower() != verified_login.lower():
+            return _deny(
+                "caller_identity_spoofing",
+                "Repository permission record does not belong to the verified human caller.",
+                verified_login=verified_login,
+            )
+        permission = _clean_text(matched_perm_entry.get("permission")).lower()
+    else:
+        permission = _clean_text(matched_perm_entry).lower()
+
+    return {
+        "ok": True,
+        "verified_login": verified_login,
+        "verified_permission": permission,
+    }
+
+
 def authorize_github_mutation(
     *,
     operation: str,
@@ -2044,39 +2247,23 @@ def authorize_github_mutation(
             expected_target_repo=normalized_expected,
         )
 
-    if auth_context is None or not isinstance(auth_context, dict):
-        return _deny(
-            "unknown_identity",
-            "Authenticated GitHub identity context is missing; failing closed.",
-        )
-
-    if auth_context.get("identity_lookup_failed") or auth_context.get("identity_stale"):
-        return _deny(
-            "stale_or_failed_identity_lookup",
-            "Authenticated GitHub identity lookup failed or is stale.",
-        )
-
-    verified_identity = auth_context.get("verified_user")
-    if not isinstance(verified_identity, dict):
-        return _deny(
-            "unknown_identity",
-            "Could not resolve an authenticated human GitHub user.",
-        )
-
-    verified_login = _clean_text(verified_identity.get("login"))
-    verified_type = _clean_text(verified_identity.get("type") or "User")
-    is_bot_account = (
-        bool(verified_identity.get("is_bot"))
-        or verified_type.lower() != "user"
-        or verified_login.endswith("[bot]")
-        or verified_login.startswith("app/")
-        or verified_login.lower() in {"knowb-kenobi", "knowb-kenobi[bot]"}
+    verified_context = _verify_human_identity_and_repo_permission(
+        auth_context, normalized_target
     )
-    if not verified_login or is_bot_account:
+    if not verified_context.get("ok"):
+        context_extra = {
+            key: value
+            for key, value in verified_context.items()
+            if key not in {"ok", "reason", "detail"}
+        }
         return _deny(
-            "unknown_identity",
-            "Authenticated identity must be a verified human GitHub user, not a bot or unknown account.",
+            verified_context["reason"],
+            verified_context["detail"],
+            **context_extra,
         )
+
+    verified_login = verified_context["verified_login"]
+    human_permission = verified_context["verified_permission"]
 
     supplied_login = _clean_text(
         caller_supplied_login
@@ -2096,56 +2283,6 @@ def authorize_github_mutation(
 
     # Never trust caller-asserted role; always resolve permission on the exact target repository
     _ignored_asserted_role = asserted_role or auth_context.get("asserted_role")
-
-    if auth_context.get("permission_lookup_failed") or auth_context.get("permission_stale"):
-        return _deny(
-            "stale_or_failed_permission_lookup",
-            f"Permission lookup for '{verified_login}' on '{normalized_target}' failed or is stale.",
-            verified_login=verified_login,
-        )
-
-    repo_permissions = auth_context.get("repo_permissions")
-    if not isinstance(repo_permissions, dict):
-        return _deny(
-            "stale_or_failed_permission_lookup",
-            f"No verified repository permission map available for '{normalized_target}'.",
-            verified_login=verified_login,
-        )
-
-    # Match exact target_repo in repo_permissions
-    matched_perm_entry: Any = None
-    for repo_key, perm_val in repo_permissions.items():
-        if _normalize_repo_full_name(repo_key).lower() == normalized_target.lower():
-            matched_perm_entry = perm_val
-            break
-
-    if matched_perm_entry is None:
-        return _deny(
-            "wrong_repository_mapping",
-            (
-                f"Permission was not verified for exact target repository "
-                f"'{normalized_target}'."
-            ),
-            verified_login=verified_login,
-        )
-
-    if isinstance(matched_perm_entry, dict):
-        if matched_perm_entry.get("stale") or matched_perm_entry.get("failed"):
-            return _deny(
-                "stale_or_failed_permission_lookup",
-                f"Permission record for '{normalized_target}' is stale or failed.",
-                verified_login=verified_login,
-            )
-        permission_actor = _clean_text(matched_perm_entry.get("login"))
-        if permission_actor and permission_actor.lower() != verified_login.lower():
-            return _deny(
-                "caller_identity_spoofing",
-                "Repository permission record does not belong to the verified human caller.",
-                verified_login=verified_login,
-            )
-        human_permission = _clean_text(matched_perm_entry.get("permission")).lower()
-    else:
-        human_permission = _clean_text(matched_perm_entry).lower()
 
     if human_permission not in ALLOWED_WRITE_PERMISSIONS:
         return _deny(
@@ -3045,7 +3182,7 @@ def submit_contributor_request(
                 f"draft to {APPROVED_REQUEST_RECIPIENT}. Request was not sent."
             )
 
-    init_db()
+    ensure_schema()
     with get_conn() as conn:
         conn.execute(
             """
@@ -3116,49 +3253,20 @@ def list_contributor_requests(
 
     Never exposes contributor request details publicly.
     """
-    if not isinstance(auth_context, dict):
+    verified = _verify_human_identity_and_repo_permission(auth_context, BETTERHACKDAYS_REPO)
+    if not verified.get("ok"):
         return {
             "status": "unauthorized",
-            "reason": "authentication_required",
-            "detail": "Contributor requests are private and never exposed publicly.",
+            "reason": verified["reason"],
+            "detail": verified["detail"],
+            "is_public": False,
             "requests": [],
         }
 
-    verified_user = auth_context.get("verified_user")
-    if not isinstance(verified_user, dict):
-        return {
-            "status": "unauthorized",
-            "reason": "authentication_required",
-            "detail": "Contributor requests require a verified human GitHub identity.",
-            "requests": [],
-        }
+    verified_login = verified["verified_login"]
+    is_maintainer_or_admin = verified["verified_permission"] in {"maintain", "admin"}
 
-    verified_login = _clean_text(verified_user.get("login"))
-    verified_type = _clean_text(verified_user.get("type") or "User")
-    if (
-        not verified_login
-        or verified_type.lower() != "user"
-        or verified_login.endswith("[bot]")
-    ):
-        return {
-            "status": "unauthorized",
-            "reason": "authentication_required",
-            "detail": "Contributor requests require a verified human GitHub identity.",
-            "requests": [],
-        }
-
-    repo_perms = auth_context.get("repo_permissions") or {}
-    raw_perm = repo_perms.get(BETTERHACKDAYS_REPO) or repo_perms.get(
-        BETTERHACKDAYS_REPO.lower()
-    )
-    if isinstance(raw_perm, dict):
-        role = _clean_text(raw_perm.get("permission")).lower()
-    else:
-        role = _clean_text(raw_perm).lower()
-
-    is_maintainer_or_admin = role in {"maintain", "admin"}
-
-    init_db()
+    ensure_schema()
     with get_conn() as conn:
         if is_maintainer_or_admin:
             rows = conn.execute(

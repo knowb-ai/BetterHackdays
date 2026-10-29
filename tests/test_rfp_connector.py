@@ -322,6 +322,34 @@ class TestWorkPackage2RfpCatalogue(unittest.TestCase):
             self.assertEqual(by_id[project_id]["brief_status"], "pending")
             self.assertIn("pending", by_id[project_id]["summary"].lower())
 
+    def test_website_rfp_slugs_never_duplicate_discovered_public_repos(self) -> None:
+        metadata = [
+            *rfp_connector.DEFAULT_PUBLIC_REPO_METADATA,
+            {
+                "name": "ShadowCaster",
+                "private": False,
+                "visibility": "public",
+                "archived": False,
+                "fork": False,
+                "default_branch": "main",
+            },
+            {
+                "name": "Precongnition",
+                "private": False,
+                "visibility": "public",
+                "archived": False,
+                "fork": False,
+                "default_branch": "main",
+            },
+        ]
+        catalogue = rfp_connector.build_project_rfp_catalogue(
+            repo_metadata=metadata,
+            readme_fetcher=lambda name, branch: rfp_connector.DEFAULT_PUBLIC_READMES.get(name),
+        )
+        rfp_ids = [item["rfp_id"] for item in catalogue["rfps"]]
+        self.assertEqual(rfp_ids.count("shadowcaster"), 1)
+        self.assertEqual(rfp_ids.count("precongnition"), 1)
+
 
 SAMPLE_CLOUD_BUILDER_STACK_CATALOGUE = """# Fun Project and Hackathon Ideas
 
@@ -485,6 +513,89 @@ class TestWorkPackage3IdeaQualificationAndCatalogue(unittest.TestCase):
         self.assertFalse(missing_evidence["eligible"])
         self.assertIn("missing_or_empty_evidence", missing_evidence["reasons"])
         self.assertEqual(self.canonical_source, before)
+
+    def test_alignment_keywords_do_not_match_inside_unrelated_words(self) -> None:
+        substring_only = rfp_connector.qualify_idea(
+            "Storage Statement Manager",
+            "Manages storage statements and artifact streams for average prevent flows.",
+            alignment_evidence="Handles storage artifacts, statements, and streams only.",
+            human_reviewed_rationale="Checked by reviewer.",
+            source_fetcher=self._source_fetcher,
+        )
+        self.assertEqual(substring_only["status"], "not_eligible")
+        self.assertFalse(substring_only["eligible"])
+        self.assertEqual(substring_only["alignment_evidence"]["matched_terms"], [])
+        self.assertIn("no_evidenced_alignment", substring_only["reasons"])
+
+    def test_ruleset_review_verification_requires_main_target_and_code_owner_rule(
+        self,
+    ) -> None:
+        tag_only = {
+            "enforcement": "active",
+            "targets": [{"ref": "refs/tags/v*"}],
+            "rules": [],
+        }
+        self.assertFalse(rfp_connector._ruleset_targets_default_branch(tag_only))
+        self.assertFalse(rfp_connector._ruleset_requires_code_owner_review(tag_only))
+
+        main_without_code_owner = {
+            "enforcement": "active",
+            "targets": [{"ref": "~DEFAULT_BRANCH"}],
+            "rules": [
+                {
+                    "type": "pull_request",
+                    "parameters": {
+                        "required_approving_review_count": 0,
+                        "require_code_owner_review": False,
+                    },
+                }
+            ],
+        }
+        self.assertTrue(rfp_connector._ruleset_targets_default_branch(main_without_code_owner))
+        self.assertFalse(
+            rfp_connector._ruleset_requires_code_owner_review(main_without_code_owner)
+        )
+
+        enforced = {
+            "enforcement": "active",
+            "targets": [{"ref": "~DEFAULT_BRANCH"}],
+            "rules": [
+                {
+                    "type": "pull_request",
+                    "parameters": {
+                        "required_approving_review_count": 1,
+                        "require_code_owner_review": True,
+                    },
+                }
+            ],
+        }
+        self.assertTrue(rfp_connector._ruleset_targets_default_branch(enforced))
+        self.assertTrue(rfp_connector._ruleset_requires_code_owner_review(enforced))
+
+    def test_proposal_fetches_catalogue_once_and_uses_highest_idea_number(self) -> None:
+        fetch_count = {"count": 0}
+
+        def counting_source() -> str:
+            fetch_count["count"] += 1
+            return self.canonical_source
+
+        result = rfp_connector.propose_idea_catalogue_addition(
+            "Context Checkpoint Ledger",
+            "Audit agent memory handoffs and retrieval citations across workshop team sessions.",
+            alignment_evidence="Supports KnowB retrieval-backed agents, durable memory checkpoints, and workshop builder sessions.",
+            human_reviewed_rationale="Reviewed by maintainer as a distinct session provenance tool.",
+            reviewed_by="valiantone",
+            source_fetcher=counting_source,
+            policy_inspector=lambda: {
+                "codeowners_present": True,
+                "codeowners_covers_catalogue": True,
+                "branch_protection_enforced": True,
+                "ruleset_review_enforced": False,
+            },
+        )
+        self.assertEqual(result["status"], "preview_ready")
+        self.assertEqual(fetch_count["count"], 1)
+        self.assertEqual(result["preview"]["proposed_idea_number"], 138)
 
     def test_maintainer_approval_gate_blocks_submission_until_enforced_and_updates_only_after_merge(
         self,
@@ -1159,6 +1270,79 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
         public_rfps = rfps_list_route(visibility=None)
         self.assertNotIn("writer_alice", str(public_rfps))
         self.assertNotIn(submitted["request_id"], str(public_rfps))
+
+    def test_request_listing_rejects_stale_or_spoofed_auth_contexts(self) -> None:
+        submitted = contributor_request_submit_route(
+            ContributorRequestSubmitInput(
+                request_type="expression_of_interest",
+                rfp_id="betterlover",
+                requested_scope="Care planning pilot with synthetic cycle data",
+                message="Interested in the private care planning pilot.",
+                auth_context=self._auth_context("writer_alice", "write"),
+            )
+        )
+        self.assertEqual(submitted["status"], "submitted_draft_not_sent")
+
+        a = self._auth_context("reader_user", "read")
+
+        stale_identity = {**a, "identity_stale": True}
+        res = contributor_request_list_route(
+            ContributorRequestListInput(auth_context=stale_identity)
+        )
+        self.assertEqual(res["status"], "unauthorized")
+        self.assertEqual(res["reason"], "stale_or_failed_identity_lookup")
+        self.assertEqual(res["requests"], [])
+
+        failed_permission = {**a, "permission_lookup_failed": True}
+        res = contributor_request_list_route(
+            ContributorRequestListInput(auth_context=failed_permission)
+        )
+        self.assertEqual(res["status"], "unauthorized")
+        self.assertEqual(res["reason"], "stale_or_failed_permission_lookup")
+
+        stale_permission_entry = {
+            "verified_user": {"login": "reader_user", "type": "User"},
+            "repo_permissions": {
+                "knowb-ai/BetterHackdays": {
+                    "login": "reader_user",
+                    "permission": "admin",
+                    "stale": True,
+                }
+            },
+        }
+        res = contributor_request_list_route(
+            ContributorRequestListInput(auth_context=stale_permission_entry)
+        )
+        self.assertEqual(res["status"], "unauthorized")
+        self.assertEqual(res["reason"], "stale_or_failed_permission_lookup")
+        self.assertEqual(res["requests"], [])
+
+        spoofed_owner = {
+            "verified_user": {"login": "reader_user", "type": "User"},
+            "repo_permissions": {
+                "knowb-ai/BetterHackdays": {
+                    "login": "valiantone",
+                    "permission": "admin",
+                }
+            },
+        }
+        res = contributor_request_list_route(
+            ContributorRequestListInput(auth_context=spoofed_owner)
+        )
+        self.assertEqual(res["status"], "unauthorized")
+        self.assertEqual(res["reason"], "caller_identity_spoofing")
+        self.assertEqual(res["requests"], [])
+
+        bot_identity = {
+            "verified_user": {"login": "knowb-kenobi[bot]", "type": "Bot", "is_bot": True},
+            "repo_permissions": {"knowb-ai/BetterHackdays": "admin"},
+        }
+        res = contributor_request_list_route(
+            ContributorRequestListInput(auth_context=bot_identity)
+        )
+        self.assertEqual(res["status"], "unauthorized")
+        self.assertEqual(res["reason"], "unknown_identity")
+        self.assertEqual(res["requests"], [])
 
 
 class TestWorkPackage6EndToEndMcpAndRestValidation(unittest.TestCase):

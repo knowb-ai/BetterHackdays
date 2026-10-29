@@ -120,6 +120,18 @@ def init_db() -> None:
         conn.executescript(_SCHEMA)
 
 
+_SCHEMA_READY: set[str] = set()
+
+
+def ensure_schema() -> None:
+    """Run schema creation at most once per database path in this process."""
+    path = _db_path()
+    if path in _SCHEMA_READY:
+        return
+    init_db()
+    _SCHEMA_READY.add(path)
+
+
 def _row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
     return {k: row[k] for k in row.keys()}
 

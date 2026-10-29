@@ -55,9 +55,32 @@ CREATE TABLE IF NOT EXISTS survey_sessions (
     updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS contributor_requests (
+    request_id      TEXT PRIMARY KEY,
+    request_type    TEXT NOT NULL CHECK (
+                        request_type IN (
+                            'refinement_draft',
+                            'expression_of_interest',
+                            'contribution_access_request',
+                            'work_elevation_request'
+                        )
+                    ),
+    rfp_id          TEXT NOT NULL,
+    project_title   TEXT NOT NULL,
+    recipient       TEXT NOT NULL DEFAULT 'ping@knowb.run',
+    requested_scope TEXT NOT NULL,
+    message         TEXT NOT NULL,
+    requester_login TEXT NOT NULL,
+    target_repo     TEXT NOT NULL DEFAULT 'knowb-ai/BetterHackdays',
+    delivery_status TEXT NOT NULL DEFAULT 'not_sent',
+    is_public       INTEGER NOT NULL DEFAULT 0 CHECK (is_public = 0),
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_swipes_from ON swipes (from_harness_id);
 CREATE INDEX IF NOT EXISTS idx_swipes_to ON swipes (to_harness_id);
 CREATE INDEX IF NOT EXISTS idx_matches_harness ON matches (harness_ids);
+CREATE INDEX IF NOT EXISTS idx_contributor_requests_requester ON contributor_requests (requester_login);
 """
 
 
@@ -95,6 +118,18 @@ def init_db() -> None:
     """Create all tables and indices if they do not already exist."""
     with get_conn() as conn:
         conn.executescript(_SCHEMA)
+
+
+_SCHEMA_READY: set[str] = set()
+
+
+def ensure_schema() -> None:
+    """Run schema creation at most once per database path in this process."""
+    path = _db_path()
+    if path in _SCHEMA_READY:
+        return
+    init_db()
+    _SCHEMA_READY.add(path)
 
 
 def _row_to_dict(row: sqlite3.Row) -> dict[str, Any]:

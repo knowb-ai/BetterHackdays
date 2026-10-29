@@ -448,3 +448,48 @@ class SurveyStateResponse(BaseModel):
     progress: str
     question: Optional[SurveyQuestion] = None
     done: bool
+
+
+# --- RFP, Design Resources, Idea Catalogue, and Contributor Connector --------
+
+
+class CompareRfpsRequest(BaseModel):
+    rfp_ids: list[str] = Field(default_factory=list)
+
+
+class DesignResourceReadRequest(BaseModel):
+    path: str = Field(..., min_length=1, max_length=260)
+    repo: str = "knowb-ai/knowb-ai.github.io"
+
+
+class QualifyIdeaRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    summary: str = Field(..., min_length=1, max_length=2000)
+    alignment_evidence: Optional[str] = None
+    human_reviewed_rationale: Optional[str] = None
+    reviewed_by: Optional[str] = None
+
+
+class ProposeIdeaCatalogueRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    summary: str = Field(..., min_length=1, max_length=2000)
+    alignment_evidence: Optional[str] = None
+    human_reviewed_rationale: Optional[str] = None
+    reviewed_by: Optional[str] = None
+    section: str = "10. Stronger Actual AI System Ideas"
+    submit: bool = False
+
+
+class ContributorRequestPreviewInput(BaseModel):
+    request_type: str = Field(..., min_length=1, max_length=80)
+    rfp_id: str = Field(..., min_length=1, max_length=120)
+    requested_scope: str = Field(..., min_length=1, max_length=500)
+    message: str = Field(..., min_length=1, max_length=4000)
+
+
+class ContributorRequestSubmitInput(BaseModel):
+    request_type: str = Field(..., min_length=1, max_length=80)
+    rfp_id: str = Field(..., min_length=1, max_length=120)
+    requested_scope: str = Field(..., min_length=1, max_length=500)
+    message: str = Field(..., min_length=1, max_length=4000)
+

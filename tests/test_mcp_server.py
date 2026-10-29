@@ -60,9 +60,25 @@ class McpServerTest(unittest.TestCase):
                 "generate_process_timeline",
                 "generate_prep_checklist",
                 "resolve_slug",
+                "list_project_rfps",
+                "read_project_rfp",
+                "search_project_rfps",
+                "compare_project_rfps",
+                "list_design_resources",
+                "read_design_resource",
+                "search_design_resources",
+                "fetch_idea_catalogue",
+                "qualify_idea",
+                "propose_idea_catalogue_addition",
+                "preview_contributor_request",
+                "submit_contributor_request",
+                "list_contributor_requests",
+                "authorize_github_mutation",
+                "grant_repository_access",
             },
         )
         self.assertIn("Hack Day", server.tools["resolve_slug"]["description"])
+        self.assertIn("RFP", server.tools["list_project_rfps"]["description"])
 
     def test_registered_survey_tools_use_shared_function_layer(self) -> None:
         server = mcp_server.create_server(FakeFastMCP)

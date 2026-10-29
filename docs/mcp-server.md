@@ -38,9 +38,52 @@ Run behavior and environment requirements are described in
 - `generate_process_timeline`
 - `generate_prep_checklist`
 - `resolve_slug`
+- `list_project_rfps`
+- `read_project_rfp`
+- `search_project_rfps`
+- `compare_project_rfps`
+- `list_design_resources`
+- `read_design_resource`
+- `search_design_resources`
+- `fetch_idea_catalogue`
+- `qualify_idea`
+- `propose_idea_catalogue_addition`
+- `preview_contributor_request`
+- `submit_contributor_request`
+- `list_contributor_requests`
+- `authorize_github_mutation`
+- `grant_repository_access`
 
-These tools support Hack Day onboarding, matchmaking, and planning. They do not
-create a shared work session or connect agents to GitHub or HotMem.
+These tools support Hack Day onboarding, matchmaking, planning, and the public
+KnowB RFP, design-resource, idea-qualification, and contributor-request
+connector. They keep active project RFPs, ideation-only suggestions from Cloud
+Builder Stack, and approved delivery commitments distinct, and they enforce
+caller GitHub identity and repository permission checks before any write. They
+do not create a shared work session or connect agents to HotMem.
+
+## Identity and permission resolution
+
+- MCP tools never accept `auth_context`, identity, role, or permission claims
+  from the caller. They resolve identity from the server's `GITHUB_TOKEN`
+  against the GitHub API before a write.
+- REST write routes read `Authorization: Bearer <token>` and resolve the same
+  way. A missing token fails closed.
+- Cloud Builder Stack PR creation requires the verified caller to have
+  `maintain` or `admin` permission and to match `reviewed_by`.
+- Repository invitations remain an owner-only operation outside MCP; the MCP
+  grant tool is preview-only.
+
+## Live sources and transports
+
+- Public project metadata and READMEs come from the live GitHub API.
+- Idea suggestions come from the canonical Cloud Builder Stack document.
+- Showcase alignment comes from the live knowb.run homepage source.
+- Design resources are read from the allowlisted files in
+  `knowb-ai/knowb-ai.github.io`.
+- Contributor requests are emailed over configured SMTP or returned as an
+  addressed, unsent draft.
+- Cloud Builder Stack PRs and repository invitations use
+  `KENOBI_GITHUB_TOKEN` (or `GITHUB_TOKEN`).
 
 ## Target session tools
 

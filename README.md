@@ -232,6 +232,21 @@ planning
 slug and room resolution
   POST /slug/resolve
 
+rfp and contributor connector
+  GET  /rfps
+  GET  /rfps/search
+  POST /rfps/compare
+  GET  /rfps/{rfp_id}
+  GET  /design-resources
+  GET  /design-resources/search
+  POST /design-resources/read
+  GET  /ideas/catalogue
+  POST /ideas/qualify
+  POST /ideas/propose
+  POST /contributor/requests/preview
+  POST /contributor/requests/submit
+  POST /contributor/requests/list
+
 health
   GET /health
 ```
@@ -239,6 +254,23 @@ health
 `app.mcp_tools` is the shared function layer under these surfaces. REST routes
 delegate there, and `app.mcp_server` registers the same behavior as MCP tools
 without forking business logic.
+
+### Connector authentication and live sources
+
+- REST writes read a GitHub bearer token from `Authorization` and resolve the
+  caller's identity and exact-repository permission live. Request bodies never
+  carry identity, role, or permission claims.
+- MCP calls resolve identity from the server's `GITHUB_TOKEN`.
+- Project RFPs, README excerpts, the public showcase, and design resources are
+  fetched from their live public sources. A failed source returns an explicit
+  unavailable or fallback marker instead of stale content.
+- Contributor requests route to `ping@knowb.run` when SMTP delivery is
+  configured (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`,
+  `SMTP_FROM`), otherwise they return a complete addressed draft and report it
+  as unsent.
+- Cloud Builder Stack pull requests and repository invitations use
+  `KENOBI_GITHUB_TOKEN` (or `GITHUB_TOKEN`). Without a token the connector
+  reports the transport as unavailable.
 
 ## What Is Implemented Now
 

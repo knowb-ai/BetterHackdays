@@ -294,56 +294,34 @@ def resolve_slug(
 
 def list_project_rfps(
     visibility: Optional[str] = None,
-    repo_metadata: Optional[list[dict[str, Any]]] = None,
-    readme_fetcher: Optional[Any] = None,
 ) -> dict[str, Any]:
     """List approved KnowB project RFPs and public resources separately from idea suggestions."""
-    return rfp_connector.list_project_rfps(
-        visibility=visibility,
-        repo_metadata=repo_metadata,
-        readme_fetcher=readme_fetcher,
-    )
+    return rfp_connector.list_project_rfps(visibility=visibility)
 
 
 def read_project_rfp(
     rfp_id: str,
-    repo_metadata: Optional[list[dict[str, Any]]] = None,
-    readme_fetcher: Optional[Any] = None,
 ) -> dict[str, Any]:
     """Read a single approved KnowB project RFP brief by ID or title."""
-    return rfp_connector.read_project_rfp(
-        rfp_id,
-        repo_metadata=repo_metadata,
-        readme_fetcher=readme_fetcher,
-    )
+    return rfp_connector.read_project_rfp(rfp_id)
 
 
 def search_project_rfps(
     query: str,
     include_design_resources: bool = False,
-    repo_metadata: Optional[list[dict[str, Any]]] = None,
-    readme_fetcher: Optional[Any] = None,
 ) -> dict[str, Any]:
     """Search approved project RFPs and optionally allowlisted public design resources."""
     return rfp_connector.search_project_rfps(
         query,
         include_design_resources=include_design_resources,
-        repo_metadata=repo_metadata,
-        readme_fetcher=readme_fetcher,
     )
 
 
 def compare_project_rfps(
     rfp_ids: list[str],
-    repo_metadata: Optional[list[dict[str, Any]]] = None,
-    readme_fetcher: Optional[Any] = None,
 ) -> dict[str, Any]:
     """Compare two or more approved KnowB project RFPs side-by-side."""
-    return rfp_connector.compare_project_rfps(
-        rfp_ids,
-        repo_metadata=repo_metadata,
-        readme_fetcher=readme_fetcher,
-    )
+    return rfp_connector.compare_project_rfps(rfp_ids)
 
 
 def list_design_resources() -> dict[str, Any]:
@@ -354,13 +332,11 @@ def list_design_resources() -> dict[str, Any]:
 def read_design_resource(
     path: str,
     repo: str = rfp_connector.DESIGN_RESOURCE_REPO,
-    content_fetcher: Optional[Any] = None,
 ) -> dict[str, Any]:
     """Read an allowlisted public design philosophy document or asset from knowb-ai.github.io."""
     return rfp_connector.read_design_resource(
         path,
         repo=repo,
-        content_fetcher=content_fetcher,
     )
 
 
@@ -373,14 +349,12 @@ def fetch_idea_catalogue(
     query: Optional[str] = None,
     section: Optional[str] = None,
     limit: Optional[int] = None,
-    source_fetcher: Optional[Any] = None,
 ) -> dict[str, Any]:
     """Fetch the canonical Cloud Builder Stack idea catalogue live and return suggestions separately from RFPs."""
     return rfp_connector.fetch_idea_catalogue(
         query=query,
         section=section,
         limit=limit,
-        source_fetcher=source_fetcher,
     )
 
 
@@ -390,9 +364,6 @@ def qualify_idea(
     alignment_evidence: Optional[str] = None,
     human_reviewed_rationale: Optional[str] = None,
     reviewed_by: Optional[str] = None,
-    source_fetcher: Optional[Any] = None,
-    repo_metadata: Optional[list[dict[str, Any]]] = None,
-    readme_fetcher: Optional[Any] = None,
 ) -> dict[str, Any]:
     """Deterministically qualify a candidate idea against the canonical catalogue, open public projects, and showcase."""
     return rfp_connector.qualify_idea(
@@ -401,9 +372,6 @@ def qualify_idea(
         alignment_evidence=alignment_evidence,
         human_reviewed_rationale=human_reviewed_rationale,
         reviewed_by=reviewed_by,
-        source_fetcher=source_fetcher,
-        repo_metadata=repo_metadata,
-        readme_fetcher=readme_fetcher,
     )
 
 
@@ -415,13 +383,7 @@ def propose_idea_catalogue_addition(
     reviewed_by: Optional[str] = None,
     section: str = "10. Stronger Actual AI System Ideas",
     submit: bool = False,
-    source_fetcher: Optional[Any] = None,
-    repo_metadata: Optional[list[dict[str, Any]]] = None,
-    readme_fetcher: Optional[Any] = None,
-    policy_inspector: Optional[Any] = None,
-    policy_pr_url: Optional[str] = None,
     auth_context: Optional[dict[str, Any]] = None,
-    pr_submitter: Optional[Any] = None,
 ) -> dict[str, Any]:
     """Preview and optionally submit a qualified, human-reviewed idea as a PR to Cloud Builder Stack."""
     return rfp_connector.propose_idea_catalogue_addition(
@@ -432,13 +394,7 @@ def propose_idea_catalogue_addition(
         reviewed_by=reviewed_by,
         section=section,
         submit=submit,
-        source_fetcher=source_fetcher,
-        repo_metadata=repo_metadata,
-        readme_fetcher=readme_fetcher,
-        policy_inspector=policy_inspector,
-        policy_pr_url=policy_pr_url,
         auth_context=auth_context,
-        pr_submitter=pr_submitter,
     )
 
 
@@ -447,8 +403,6 @@ def preview_contributor_request(
     rfp_id: str,
     requested_scope: str,
     message: str,
-    repo_metadata: Optional[list[dict[str, Any]]] = None,
-    readme_fetcher: Optional[Any] = None,
 ) -> dict[str, Any]:
     """Preview a refinement draft, expression of interest, contribution-access request, or work-elevation request."""
     return rfp_connector.preview_contributor_request(
@@ -456,8 +410,6 @@ def preview_contributor_request(
         rfp_id,
         requested_scope,
         message,
-        repo_metadata=repo_metadata,
-        readme_fetcher=readme_fetcher,
     )
 
 
@@ -466,27 +418,15 @@ def submit_contributor_request(
     rfp_id: str,
     requested_scope: str,
     message: str,
-    target_repo: str = rfp_connector.BETTERHACKDAYS_REPO,
-    caller_supplied_login: Optional[str] = None,
-    asserted_role: Optional[str] = None,
     auth_context: Optional[dict[str, Any]] = None,
-    delivery_transport: Optional[Any] = None,
-    repo_metadata: Optional[list[dict[str, Any]]] = None,
-    readme_fetcher: Optional[Any] = None,
 ) -> dict[str, Any]:
-    """Submit a contributor request after verifying caller identity and write/maintain/admin permission on BetterHackdays."""
+    """Submit a contributor request after verifying caller identity and repository permission on BetterHackdays."""
     return rfp_connector.submit_contributor_request(
         request_type,
         rfp_id,
         requested_scope,
         message,
-        target_repo=target_repo,
-        caller_supplied_login=caller_supplied_login,
-        asserted_role=asserted_role,
         auth_context=auth_context,
-        delivery_transport=delivery_transport,
-        repo_metadata=repo_metadata,
-        readme_fetcher=readme_fetcher,
     )
 
 
@@ -501,8 +441,6 @@ def authorize_github_mutation(
     operation: str,
     target_repo: str,
     expected_target_repo: Optional[str] = None,
-    caller_supplied_login: Optional[str] = None,
-    asserted_role: Optional[str] = None,
     auth_context: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """Verify caller GitHub identity, target repository permission, and Kenobi installation scope before a mutation."""
@@ -510,8 +448,6 @@ def authorize_github_mutation(
         operation=operation,
         target_repo=target_repo,
         expected_target_repo=expected_target_repo,
-        caller_supplied_login=caller_supplied_login,
-        asserted_role=asserted_role,
         auth_context=auth_context,
     )
 
@@ -600,14 +536,12 @@ def authorize_github_mutation_mcp(
     operation: str,
     target_repo: str,
     expected_target_repo: Optional[str] = None,
-    caller_supplied_login: Optional[str] = None,
 ) -> dict[str, Any]:
     """MCP entry point that resolves identity server-side before an authorization check."""
     return authorize_github_mutation(
         operation=operation,
         target_repo=target_repo,
         expected_target_repo=expected_target_repo,
-        caller_supplied_login=caller_supplied_login,
         auth_context=_mcp_service_auth_context(target_repo),
     )
 

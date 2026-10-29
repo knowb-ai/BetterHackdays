@@ -1464,19 +1464,42 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
         )
         self.assertEqual(owner_list_before["requests"], [])
 
-        # Unauthorized submit (read permission) fails closed and stores nothing
-        denied_submit = self._submit_request(
+        # Unauthorized submit (none permission or work_elevation_request with read permission) fails closed and stores nothing
+        denied_none_submit = self._submit_request(
+            "contribution_access_request",
+            "betterhackdays",
+            "Write access to branch for Hack Day connector tests",
+            "Requesting project-scoped write access for BetterHackdays.",
+            self._auth_context("blocked_user", "none"),
+        )
+        self.assertEqual(denied_none_submit["status"], "unauthorized")
+        self.assertFalse(denied_none_submit["submitted"])
+        self.assertFalse(denied_none_submit["sent"])
+
+        denied_elevation_submit = self._submit_request(
+            "work_elevation_request",
+            "faultline",
+            "Elevate adversarial launch-stress scenario runner",
+            "Attempting to elevate work with read-only access.",
+            self._auth_context("reader_user", "read"),
+        )
+        self.assertEqual(denied_elevation_submit["status"], "unauthorized")
+        self.assertFalse(denied_elevation_submit["submitted"])
+        self.assertFalse(denied_elevation_submit["sent"])
+
+        # A new outside contributor with public read access CAN submit contribution_access_request
+        reader_access_request = self._submit_request(
             "contribution_access_request",
             "betterhackdays",
             "Write access to branch for Hack Day connector tests",
             "Requesting project-scoped write access for BetterHackdays.",
             self._auth_context("reader_user", "read"),
         )
-        self.assertEqual(denied_submit["status"], "unauthorized")
-        self.assertFalse(denied_submit["submitted"])
-        self.assertFalse(denied_submit["sent"])
+        self.assertEqual(reader_access_request["status"], "submitted_draft_not_sent")
+        self.assertTrue(reader_access_request["submitted"])
+        self.assertFalse(reader_access_request["grants_repository_access"])
 
-        # Authorized submit (write permission on BetterHackdays) stores privately and returns unsent addressed draft when transport is unavailable
+        # Authorized submit (write permission on BetterHackdays) for work_elevation_request stores privately and returns unsent addressed draft when transport is unavailable
         submitted = self._submit_request(
             "work_elevation_request",
             "faultline",
@@ -1504,14 +1527,14 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
         self.assertEqual(unauth_list["status"], "unauthorized")
         self.assertEqual(unauth_list["requests"], [])
 
-        # 2. Another user cannot see writer_alice's request
+        # 2. Another user cannot see writer_alice's or reader_user's requests
         other_user_list = self._list_requests(
             self._auth_context("writer_bob", "write")
         )
         self.assertEqual(other_user_list["status"], "ok")
         self.assertEqual(other_user_list["requests"], [])
 
-        # 3. writer_alice can see her own request
+        # 3. writer_alice and reader_user can each see only their own request
         alice_list = self._list_requests(
             self._auth_context("writer_alice", "write")
         )
@@ -1520,9 +1543,18 @@ class TestWorkPackage5RequestsAndDesignResources(unittest.TestCase):
             alice_list["requests"][0]["request_id"], submitted["request_id"]
         )
 
-        # 4. BetterHackdays admin (valiantone) can review stored requests
+        reader_list = self._list_requests(
+            self._auth_context("reader_user", "read")
+        )
+        self.assertEqual(len(reader_list["requests"]), 1)
+        self.assertEqual(
+            reader_list["requests"][0]["request_id"],
+            reader_access_request["request_id"],
+        )
+
+        # 4. BetterHackdays admin (valiantone) can review all stored requests
         admin_list = self._list_requests(self._auth_context("valiantone", "admin"))
-        self.assertEqual(len(admin_list["requests"]), 1)
+        self.assertEqual(len(admin_list["requests"]), 2)
 
         # 5. Public RFP listing never leaks stored contributor requests
         public_rfps = rfps_list_route(visibility=None)
@@ -1739,6 +1771,132 @@ class TestRequestTrustBoundary(unittest.TestCase):
             self.assertEqual(listing["viewer_login"], "writer_alice")
         finally:
             app.dependency_overrides.clear()
+
+    def test_live_auth_context_succeeds_for_non_owner_writer_and_public_reader_when_org_installations_403(
+        self,
+    ) -> None:
+        import io
+        import json
+        import urllib.error
+
+        class _FakeResponse:
+            def __init__(self, payload: dict[str, Any]) -> None:
+                self._buf = io.BytesIO(json.dumps(payload).encode("utf-8"))
+
+            def read(self) -> bytes:
+                return self._buf.read()
+
+            def __enter__(self) -> "_FakeResponse":
+                return self
+
+            def __exit__(self, *args: Any) -> None:
+                self._buf.close()
+
+        # 1. Ordinary collaborator with write access whose token gets 403 on /orgs/knowb-ai/installations
+        def writer_urlopen(req: Any, timeout: float = 10.0) -> _FakeResponse:
+            url = req.full_url
+            if url.endswith("/user"):
+                return _FakeResponse({"login": "writer_alice", "id": 10, "type": "User"})
+            if "/collaborators/writer_alice/permission" in url:
+                return _FakeResponse({"permission": "write"})
+            if "/orgs/knowb-ai/installations" in url:
+                raise urllib.error.HTTPError(
+                    url, 403, "Must be an organization owner", hdrs=None, fp=None
+                )
+            raise AssertionError(f"Unexpected URL: {url}")
+
+        with patch.object(rfp_connector.urllib.request, "urlopen", side_effect=writer_urlopen):
+            writer_ctx = rfp_connector.resolve_live_github_auth_context(
+                "knowb-ai/BetterHackdays", token="ghp_writer_token"
+            )
+        self.assertEqual(writer_ctx["verified_user"]["login"], "writer_alice")
+        self.assertEqual(
+            writer_ctx["repo_permissions"]["knowb-ai/BetterHackdays"]["permission"],
+            "write",
+        )
+        self.assertEqual(writer_ctx["bot_installation"]["app_slug"], "knowb-kenobi")
+        writer_auth = rfp_connector.authorize_github_mutation(
+            operation="pr_edit",
+            target_repo="knowb-ai/BetterHackdays",
+            auth_context=writer_ctx,
+        )
+        self.assertTrue(writer_auth["authorized"])
+
+        # 2. Outside contributor without push access whose token gets 403 on /collaborators/.../permission and /orgs/.../installations
+        def reader_urlopen(req: Any, timeout: float = 10.0) -> _FakeResponse:
+            url = req.full_url
+            if url.endswith("/user"):
+                return _FakeResponse({"login": "new_contributor", "id": 20, "type": "User"})
+            if "/collaborators/new_contributor/permission" in url:
+                raise urllib.error.HTTPError(
+                    url, 403, "Must have push access", hdrs=None, fp=None
+                )
+            if url.endswith("/repos/knowb-ai/BetterHackdays"):
+                return _FakeResponse(
+                    {
+                        "private": False,
+                        "permissions": {
+                            "admin": False,
+                            "maintain": False,
+                            "push": False,
+                            "triage": False,
+                            "pull": True,
+                        },
+                    }
+                )
+            if "/orgs/knowb-ai/installations" in url:
+                raise urllib.error.HTTPError(
+                    url, 403, "Must be an organization owner", hdrs=None, fp=None
+                )
+            raise AssertionError(f"Unexpected URL: {url}")
+
+        with patch.object(rfp_connector.urllib.request, "urlopen", side_effect=reader_urlopen):
+            reader_ctx = rfp_connector.resolve_live_github_auth_context(
+                "knowb-ai/BetterHackdays", token="ghp_reader_token"
+            )
+        self.assertEqual(reader_ctx["verified_user"]["login"], "new_contributor")
+        self.assertEqual(
+            reader_ctx["repo_permissions"]["knowb-ai/BetterHackdays"]["permission"],
+            "read",
+        )
+        access_req = rfp_connector.submit_contributor_request(
+            "contribution_access_request",
+            "betterhackdays",
+            "Requesting access to prototype Hack Day RFP connector",
+            "I would like to contribute to the BetterHackdays RFP workflow.",
+            auth_context=reader_ctx,
+        )
+        self.assertEqual(access_req["status"], "submitted_draft_not_sent")
+        self.assertTrue(access_req["submitted"])
+
+    def test_registered_mcp_tools_expose_no_fixture_or_test_hook_parameters(
+        self,
+    ) -> None:
+        import inspect
+
+        forbidden_hook_params = {
+            "repo_metadata",
+            "readme_fetcher",
+            "source_fetcher",
+            "content_fetcher",
+            "showcase_fetcher",
+            "policy_inspector",
+            "policy_pr_url",
+            "auth_context",
+            "pr_submitter",
+            "delivery_transport",
+            "caller_supplied_login",
+            "asserted_role",
+        }
+        server = mcp_server.create_server(FakeFastMCP)
+        for tool_name, entry in server.tools.items():
+            param_names = set(inspect.signature(entry["func"]).parameters.keys())
+            leaked = param_names.intersection(forbidden_hook_params)
+            self.assertEqual(
+                leaked,
+                set(),
+                f"MCP tool '{tool_name}' exposed test/fixture hook parameter(s): {sorted(leaked)}",
+            )
 
 
 class TestWorkPackage6EndToEndMcpAndRestValidation(unittest.TestCase):

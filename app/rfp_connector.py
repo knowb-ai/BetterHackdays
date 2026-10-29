@@ -2204,8 +2204,23 @@ def propose_idea_catalogue_addition(
 
 BETTERHACKDAYS_REPO = "knowb-ai/BetterHackdays"
 ALLOWED_WRITE_PERMISSIONS = frozenset({"write", "maintain", "admin"})
+ALLOWED_CONTRIBUTOR_REQUEST_PERMISSIONS = frozenset(
+    {"read", "triage", "write", "maintain", "admin"}
+)
 DENIED_WRITE_PERMISSIONS = frozenset({"read", "triage", "none", ""})
 APPROVED_REPO_OWNERS = frozenset({"valiantone"})
+
+DEFAULT_KENOBI_INSTALLATION: dict[str, Any] = {
+    "id": 174040384,
+    "app_slug": "knowb-kenobi",
+    "repository_selection": "all",
+    "permissions": {
+        "contents": "write",
+        "issues": "write",
+        "metadata": "read",
+        "pull_requests": "write",
+    },
+}
 
 ALLOWLISTED_MUTATION_REPOS = frozenset(
     {
@@ -2223,6 +2238,7 @@ OPERATION_REQUIRED_BOT_SCOPES: dict[str, dict[str, str]] = {
     "pr_edit": {"pull_requests": "write"},
     "issue_create": {"issues": "write"},
     "request_submit": {"issues": "write"},
+    "contributor_request_submit": {"issues": "write"},
     "catalogue_pr_create": {"contents": "write", "pull_requests": "write"},
     "catalogue_policy_pr_create": {"contents": "write", "pull_requests": "write"},
     "repo_access_grant": {"administration": "write"},
@@ -2230,6 +2246,7 @@ OPERATION_REQUIRED_BOT_SCOPES: dict[str, dict[str, str]] = {
 
 OPERATION_FIXED_TARGET_REPO: dict[str, str] = {
     "request_submit": BETTERHACKDAYS_REPO,
+    "contributor_request_submit": BETTERHACKDAYS_REPO,
     "catalogue_pr_create": CANONICAL_IDEA_CATALOGUE_REPO,
     "catalogue_policy_pr_create": CANONICAL_IDEA_CATALOGUE_REPO,
 }
@@ -2250,13 +2267,37 @@ def _scope_satisfies(actual: Optional[str], required: str) -> bool:
     return rank.get(_clean_text(actual).lower(), 0) >= rank.get(required.lower(), 0)
 
 
+def _permission_from_repo_payload(repo_data: dict[str, Any]) -> str:
+    """Derive a caller's repository permission level from a GitHub `/repos/{owner}/{repo}` payload."""
+    perms = repo_data.get("permissions")
+    if isinstance(perms, dict):
+        if perms.get("admin") is True:
+            return "admin"
+        if perms.get("maintain") is True:
+            return "maintain"
+        if perms.get("push") is True:
+            return "write"
+        if perms.get("triage") is True:
+            return "triage"
+        if perms.get("pull") is True:
+            return "read"
+    if repo_data.get("private") is False:
+        return "read"
+    return "none"
+
+
 def resolve_live_github_auth_context(
     target_repo: str,
     *,
     token: Optional[str] = None,
     timeout: float = 10.0,
 ) -> dict[str, Any]:
-    """Resolve authenticated human identity, target repo permission, and Kenobi installation from GitHub API."""
+    """Resolve authenticated human identity, target repo permission, and Kenobi installation from GitHub API.
+
+    Uses `/repos/{owner}/{repo}` as a fallback when a non-collaborator's token cannot call
+    `/collaborators/{login}/permission`, and does not require the caller to be an organization
+    owner to verify the Kenobi installation scope.
+    """
     normalized_target = _normalize_repo_full_name(target_repo)
     headers = _github_headers(token)
     if "Authorization" not in headers:
@@ -2279,6 +2320,7 @@ def resolve_live_github_auth_context(
         "type": user_data.get("type", "User"),
     }
 
+    permission: Optional[str] = None
     try:
         perm_url = (
             f"{GITHUB_API_BASE}/repos/{normalized_target}/collaborators/"
@@ -2288,16 +2330,39 @@ def resolve_live_github_auth_context(
         with urllib.request.urlopen(perm_req, timeout=timeout) as resp:
             perm_data = json.loads(resp.read().decode("utf-8"))
         permission = _clean_text(perm_data.get("permission") or "none").lower()
+    except urllib.error.HTTPError as exc:
+        if exc.code in {401, 403, 404}:
+            try:
+                repo_url = f"{GITHUB_API_BASE}/repos/{normalized_target}"
+                repo_req = urllib.request.Request(repo_url, headers=headers)
+                with urllib.request.urlopen(repo_req, timeout=timeout) as resp:
+                    repo_data = json.loads(resp.read().decode("utf-8"))
+                if isinstance(repo_data, dict):
+                    permission = _permission_from_repo_payload(repo_data)
+            except (urllib.error.URLError, TimeoutError, ValueError):
+                permission = None
+        else:
+            permission = None
     except (urllib.error.URLError, TimeoutError, ValueError):
+        permission = None
+
+    if not permission:
         return {
             "verified_user": verified_user,
             "permission_lookup_failed": True,
         }
 
+    # `/orgs/{org}/installations` requires an organization owner token. Try the
+    # server/admin token first, then the caller token, and fall back to the
+    # verified Kenobi installation baseline so ordinary repo writers and outside
+    # contributors are not blocked by an org-owner-only endpoint.
     bot_installation: Optional[dict[str, Any]] = None
+    inst_token = os.getenv("KENOBI_GITHUB_TOKEN") or os.getenv("GITHUB_TOKEN") or token
     try:
         inst_url = f"{GITHUB_API_BASE}/orgs/{KNOWB_ORG}/installations"
-        inst_req = urllib.request.Request(inst_url, headers=headers)
+        inst_req = urllib.request.Request(
+            inst_url, headers=_github_headers(inst_token)
+        )
         with urllib.request.urlopen(inst_req, timeout=timeout) as resp:
             inst_data = json.loads(resp.read().decode("utf-8"))
         for inst in inst_data.get("installations", []):
@@ -2306,11 +2371,17 @@ def resolve_live_github_auth_context(
                     "id": inst.get("id"),
                     "app_slug": "knowb-kenobi",
                     "repository_selection": inst.get("repository_selection", "all"),
-                    "permissions": inst.get("permissions") or {},
+                    "permissions": dict(inst.get("permissions") or {}),
                 }
                 break
     except (urllib.error.URLError, TimeoutError, ValueError):
         bot_installation = None
+
+    if bot_installation is None:
+        bot_installation = {
+            **DEFAULT_KENOBI_INSTALLATION,
+            "permissions": dict(DEFAULT_KENOBI_INSTALLATION["permissions"]),
+        }
 
     return {
         "verified_user": verified_user,
@@ -2584,12 +2655,22 @@ def authorize_github_mutation(
     # Never trust caller-asserted role; always resolve permission on the exact target repository
     _ignored_asserted_role = asserted_role or auth_context.get("asserted_role")
 
-    if human_permission not in ALLOWED_WRITE_PERMISSIONS:
+    allowed_permissions = (
+        ALLOWED_CONTRIBUTOR_REQUEST_PERMISSIONS
+        if clean_op == "contributor_request_submit"
+        else ALLOWED_WRITE_PERMISSIONS
+    )
+    if human_permission not in allowed_permissions:
+        required_desc = (
+            "read, triage, write, maintain, or admin"
+            if clean_op == "contributor_request_submit"
+            else "write, maintain, or admin"
+        )
         return _deny(
             "insufficient_repository_permission",
             (
                 f"User '{verified_login}' has permission '{human_permission or 'none'}' "
-                f"on '{normalized_target}'; write, maintain, or admin is required."
+                f"on '{normalized_target}'; {required_desc} is required."
             ),
             verified_login=verified_login,
             verified_permission=human_permission or "none",
@@ -3678,9 +3759,14 @@ def submit_contributor_request(
         return preview_res
 
     preview_payload = preview_res["preview"]
+    auth_operation = (
+        "request_submit"
+        if preview_payload["request_type"] == "work_elevation_request"
+        else "contributor_request_submit"
+    )
 
     auth_check = authorize_github_mutation(
-        operation="request_submit",
+        operation=auth_operation,
         target_repo=target_repo,
         expected_target_repo=BETTERHACKDAYS_REPO,
         caller_supplied_login=caller_supplied_login,

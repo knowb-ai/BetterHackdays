@@ -46,17 +46,23 @@ The scenario integration test is:
 
 ## Docs Site
 
-The connector manual in `site/` is a static page published to
-https://hack.knowb.run by GitHub Pages. Its MCP tool, REST route, public RFP,
-and request type references are generated from the code:
+The connector manual in `site/` is a [Zola](https://www.getzola.org/) site,
+published by GitHub Pages to the custom domain https://hack.knowb.run.
+
+- Each section of the one-page manual is a Markdown file in
+  `site/content/manual/`, ordered by `weight`. Add a file to add a section.
+- Components are shortcodes in `site/templates/shortcodes/`.
+- The MCP tool, REST route, public RFP, and request type references render from
+  `site/data/reference.json`, generated from the code.
 
 ```bash
-.venv/bin/python scripts/build_site.py          # refresh site/index.html
+.venv/bin/python scripts/build_site.py          # refresh site/data/reference.json
 .venv/bin/python scripts/build_site.py --check  # fail if it is stale
-python3 -m http.server -d site 8080             # preview at localhost:8080
+zola --root site serve                          # preview at 127.0.0.1:1111
 ```
 
-`tests/test_docs_site.py` runs the same check in the suite. Deployment and
+`tests/test_docs_site.py` checks the sources everywhere, and checks a real build
+wherever `zola` is installed, including the Pages workflow. Deployment and
 custom domain setup are documented on the page under "Deploying this site".
 
 ## OKF Contract

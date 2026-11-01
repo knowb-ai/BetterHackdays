@@ -29,7 +29,7 @@
       "title": "Agentic Development Guidelines",
       "source_path": "agents.md",
       "okf_path": ".okf/agents.okf.json",
-      "sha256": "268992e5a1b092a0a213db4da6b8a34aa6ec71a640457b42a1baeba0486bfea1"
+      "sha256": "489dffc5fa3c4cf4f6daa5a8b314721b683575e6f9465594a0f4807fd85fae12"
     },
     {
       "id": "betterhackdays.docs.README",
@@ -50,7 +50,7 @@
       "title": "Development",
       "source_path": "docs/development.md",
       "okf_path": "docs/.okf/development.okf.json",
-      "sha256": "88287393aba7e523a03702d9a3c02c03fa393baf9cfdffbf420f6e2c540d893a"
+      "sha256": "6cf1b74858de59034e97cea506ae554daeeaf894366f00a2ae6986512df3ce6f"
     },
     {
       "id": "betterhackdays.docs.event-ingest-schema",

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetterHackdays RFP Connector: hack.knowb.run</title>
+    <meta name="description" content="The manual for the BetterHackdays RFP Connector: explore KnowB project RFPs, refine ideas, and send contributor requests that a human reviews. A request is not a grant.">
+    <meta name="theme-color" content="#161211">
+    <link rel="canonical" href="https://hack.knowb.run/">
+    <meta property="og:title" content="BetterHackdays RFP Connector">
+    <meta property="og:description" content="Pick a mission. Ask to board. A human says yes. The manual for exploring KnowB RFPs and sending contributor requests.">
+    <meta property="og:url" content="https://hack.knowb.run/">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/hack.css">
+    <script defer src="assets/hack.js"></script>
+</head>
+<body>
+<a class="skip" href="#manual">Skip to the manual</a>
+<div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="wordmark" href="#top" aria-label="hack.knowb.run home">hack<span class="dot">.</span>knowb.run</a>
+        <nav class="topnav" aria-label="Primary">
+            <a href="#quickstart">Quickstart</a>
+            <a href="#requests">Requests</a>
+            <a href="#reference">Reference</a>
+            <a href="https://github.com/knowb-ai/BetterHackdays" rel="noopener">GitHub</a>
+        </nav>
+        <button class="search-trigger" type="button" data-search-open aria-haspopup="dialog">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 2a5 5 0 1 0 3.1 8.9l3 3 1.4-1.4-3-3A5 5 0 0 0 7 2Zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></svg>
+            <span>Search the manual</span>
+            <kbd>/</kbd>
+        </button>
+        <button class="index-toggle" type="button" aria-controls="sidebar" aria-expanded="false">Index</button>
+    </div>
+</header>
+
+<main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+        <svg class="hero-scene" viewBox="0 0 1440 640" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+            <defs>
+                <linearGradient id="g-saber" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0" stop-color="#86E8FF" stop-opacity="0.05"/>
+                    <stop offset="0.45" stop-color="#86E8FF"/>
+                    <stop offset="1" stop-color="#FF4A1A" stop-opacity="0.6"/>
+                </linearGradient>
+                <radialGradient id="g-planet" cx="0.5" cy="0" r="0.9">
+                    <stop offset="0" stop-color="#2A1D1B"/>
+                    <stop offset="0.6" stop-color="#1D1514"/>
+                    <stop offset="1" stop-color="#161211"/>
+                </radialGradient>
+                <radialGradient id="g-sun" cx="0.5" cy="0.5" r="0.5">
+                    <stop offset="0" stop-color="#F59A52" stop-opacity="0.55"/>
+                    <stop offset="1" stop-color="#F59A52" stop-opacity="0"/>
+                </radialGradient>
+            </defs>
+            <g class="stars" fill="#FCF6F3">
+                <circle cx="96" cy="88" r="1.2"/><circle cx="212" cy="190" r="0.8"/><circle cx="318" cy="64" r="1"/>
+                <circle cx="452" cy="142" r="0.7"/><circle cx="604" cy="48" r="1.3"/><circle cx="731" cy="170" r="0.8"/>
+                <circle cx="866" cy="92" r="1"/><circle cx="1002" cy="36" r="0.7"/><circle cx="1121" cy="150" r="1.2"/>
+                <circle cx="1263" cy="74" r="0.9"/><circle cx="1380" cy="206" r="1"/><circle cx="1330" cy="320" r="0.7"/>
+                <circle cx="54" cy="300" r="0.8"/><circle cx="160" cy="390" r="1"/><circle cx="1210" cy="270" r="0.8"/>
+            </g>
+            <circle class="sun" cx="1130" cy="190" r="150" fill="url(#g-sun)"/>
+            <circle cx="1130" cy="190" r="34" fill="#F59A52" opacity="0.9"/>
+            <g class="orbits" fill="none" stroke-width="1">
+                <ellipse cx="1130" cy="190" rx="250" ry="70" stroke="#86E8FF" stroke-opacity="0.35" transform="rotate(-14 1130 190)"/>
+                <ellipse cx="1130" cy="190" rx="360" ry="110" stroke="#F59A52" stroke-opacity="0.22" transform="rotate(-14 1130 190)"/>
+            </g>
+            <g class="satellite" transform="translate(880 228) rotate(-14)">
+                <rect x="-26" y="-3" width="18" height="6" fill="#86E8FF" opacity="0.7"/>
+                <rect x="8" y="-3" width="18" height="6" fill="#86E8FF" opacity="0.7"/>
+                <path d="M-8 -7 h12 l4 4 v10 h-12 l-4 -4z" fill="#FCF6F3"/>
+            </g>
+            <ellipse cx="720" cy="1250" rx="1300" ry="720" fill="url(#g-planet)"/>
+            <ellipse cx="720" cy="1250" rx="1300" ry="720" fill="none" stroke="url(#g-saber)" stroke-width="2"/>
+            <g class="pad" transform="translate(220 520)">
+                <path d="M0 40 L30 0 L60 40" fill="none" stroke="#86E8FF" stroke-opacity="0.5" stroke-width="2"/>
+                <rect x="-20" y="40" width="100" height="6" fill="#3B1E1D"/>
+                <g class="rocket">
+                    <path d="M30 -70 C42 -54 44 -30 40 -6 H20 C16 -30 18 -54 30 -70Z" fill="#FCF6F3"/>
+                    <path d="M20 -18 L8 2 L20 -4Z M40 -18 L52 2 L40 -4Z" fill="#FF4A1A"/>
+                    <circle cx="30" cy="-40" r="5" fill="#120E0D" stroke="#86E8FF" stroke-width="1.5"/>
+                    <path class="flame" d="M24 -4 L30 18 L36 -4Z" fill="#F59A52"/>
+                </g>
+            </g>
+        </svg>
+
+        <div class="hero-inner">
+            <div class="hero-copy">
+                <p class="kicker"><span class="orbit" aria-hidden="true"></span>BetterHackdays · RFP Connector · Manual</p>
+                <h1 id="hero-title" class="display">Pick a mission.<br>Ask to board.<br><span class="hl">A human says yes.</span></h1>
+                <p class="lead">The RFP Connector lets any coding agent explore KnowB project RFPs, sharpen ideas against the public catalogue, and send contributor requests to the people who own the work. Everything that changes access goes through a person.</p>
+                <div class="cta-row">
+                    <a class="tf-btn" href="#quickstart">Launch in five minutes <span class="fins" aria-hidden="true"><i></i><i></i><i></i></span></a>
+                    <a class="tf-btn tf-btn-saber" href="#requests">Read the request rules <span class="fins" aria-hidden="true"><i></i><i></i><i></i></span></a>
+                </div>
+                <ul class="hero-chips" aria-label="At a glance">
+                    <li class="chip"><span class="led" aria-hidden="true"></span>MCP + REST</li>
+                    <li class="chip chip-ember"><span class="led" aria-hidden="true"></span>Requests are reviewed</li>
+                    <li class="chip"><span class="led" aria-hidden="true"></span>Open source</li>
+                </ul>
+            </div>
+
+            <figure class="console cabinet" aria-label="Example connector session">
+                <div class="console-bar">
+                    <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+                    <span>transmission · betterhackdays-hack-day</span>
+                </div>
+                <ol class="console-log" data-console>
+                    <li class="you"><span class="who">you</span><span class="say">Which RFPs could I join this weekend?</span></li>
+                    <li class="call"><span class="who">mcp</span><span class="say">list_project_rfps()</span></li>
+                    <li class="out"><span class="who"></span><span class="say"><b>ShadowCaster</b> · Underminer · X-Poser · Precongnition · MarkSweep · Subtracktor</span></li>
+                    <li class="out"><span class="who"></span><span class="say">Live projects: <b>BetterHackdays</b> · BetterLover · Sepnu Pues</span></li>
+                    <li class="you"><span class="who">you</span><span class="say">Ask to contribute to BetterHackdays.</span></li>
+                    <li class="call"><span class="who">mcp</span><span class="say">preview_contributor_request("contribution_access_request", "betterhackdays", ...)</span></li>
+                    <li class="out ok"><span class="who"></span><span class="say">status: preview_ready · grants_repository_access: <b>false</b></span></li>
+                    <li class="call"><span class="who">mcp</span><span class="say">submit_contributor_request(...)</span></li>
+                    <li class="out ok"><span class="who"></span><span class="say">Routed to a maintainer. Access only follows their explicit approval.</span></li>
+                </ol>
+                <figcaption class="sr-only">An agent lists public RFPs, previews a contribution access request, and submits it for human review. The response confirms the request grants no repository access.</figcaption>
+            </figure>
+        </div>
+
+        <ol class="flightplan" aria-label="How the connector works">
+            <li><span class="fp-no">01</span><span class="fp-t">Explore</span><span class="fp-d">List, search, read, and compare approved RFPs.</span></li>
+            <li><span class="fp-no">02</span><span class="fp-t">Refine</span><span class="fp-d">Qualify an idea against the live public catalogue.</span></li>
+            <li><span class="fp-no">03</span><span class="fp-t">Request</span><span class="fp-d">Preview, then submit with your verified GitHub identity.</span></li>
+            <li class="fp-gate"><span class="fp-no">04</span><span class="fp-t">Review</span><span class="fp-d">A repository owner decides. A request is not a grant.</span></li>
+        </ol>
+    </section>
+
+    <div class="manual" id="manual">
+        <aside class="sidebar" id="sidebar" aria-label="Manual index">
+            <p class="sidebar-label">Manual index</p>
+            <nav aria-label="Sections">
+                <ol class="toc">
+                    <li><a href="#orientation"><span>01</span>Orientation</a></li>
+                    <li><a href="#quickstart"><span>02</span>Quickstart</a></li>
+                    <li><a href="#explore"><span>03</span>Explore RFPs</a></li>
+                    <li><a href="#ideas"><span>04</span>Refine ideas</a></li>
+                    <li><a href="#requests"><span>05</span>Contributor requests</a></li>
+                    <li><a href="#boundaries"><span>06</span>Permission boundaries</a></li>
+                    <li><a href="#reference"><span>07</span>Reference</a>
+                        <ol>
+                            <li><a href="#reference-tools">MCP tools</a></li>
+                            <li><a href="#reference-rest">REST API</a></li>
+                        </ol>
+                    </li>
+                    <li><a href="#configuration"><span>08</span>Configuration</a></li>
+                    <li><a href="#deploy"><span>09</span>Deploying this site</a></li>
+                    <li><a href="#faq"><span>10</span>FAQ</a></li>
+                    <li><a href="#contributing"><span>11</span>Contributing</a></li>
+                </ol>
+            </nav>
+            <a class="sidebar-edit" href="https://github.com/knowb-ai/BetterHackdays/edit/main/site/index.html" rel="noopener">Edit this page on GitHub</a>
+        </aside>
+
+        <article class="content">
+
+            <!-- 01 -->
+            <section class="doc" id="orientation" aria-labelledby="h-orientation">
+                <p class="doc-no">01</p>
+                <h2 id="h-orientation">Orientation</h2>
+                <div class="rule"></div>
+                <p><strong>BetterHackdays</strong> is an open-source Hack Day room: it connects coding agents, matches people into teams, and turns pasted event text into a shared kickoff plan. The <strong>RFP Connector</strong> is the part of BetterHackdays that opens KnowB's project requests for proposals to outside builders.</p>
+                <p>Run the connector as an MCP server inside the agent you already use, or call the same functions over REST. Either way you can:</p>
+                <ul class="ticks">
+                    <li>browse the approved public RFPs and the live public projects behind them;</li>
+                    <li>check a new idea against the canonical idea catalogue, the open projects, and the knowb.run showcase;</li>
+                    <li>send a refinement, an expression of interest, or an access request to a maintainer, with your identity verified by GitHub.</li>
+                </ul>
+
+                <div class="grid-3">
+                    <div class="cabinet card">
+                        <p class="card-k">The connector is the source</p>
+                        <p>This site explains and points. Every RFP read, comparison, and request happens in the connector, so answers are always current.</p>
+                    </div>
+                    <div class="cabinet cabinet-ember card">
+                        <p class="card-k">The catalogue stays canonical</p>
+                        <p>Idea suggestions live in <a href="https://github.com/knowb-ai/cloud-builder-stack/blob/main/docs/fun-project-and-hackathon-ideas.md" rel="noopener">Cloud Builder Stack</a>. The connector reads them live and never copies them here.</p>
+                    </div>
+                    <div class="cabinet card">
+                        <p class="card-k">Requests stay private</p>
+                        <p>Request details go to maintainers, not to a public issue, a feed, or this page.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 02 -->
+            <section class="doc" id="quickstart" aria-labelledby="h-quickstart">
+                <p class="doc-no">02</p>
+                <h2 id="h-quickstart">Quickstart</h2>
+                <div class="rule"></div>
+                <p>You need Python 3.12, Git, and an MCP-capable agent such as Claude Code. Reading RFPs needs no account. Submitting a request needs a GitHub token for <em>your own</em> account, because the token is how the connector knows who you are.</p>
+
+                <ol class="steps">
+                    <li>
+                        <h3 id="qs-clone">Clone and install</h3>
+                        <pre class="code"><code>git clone https://github.com/knowb-ai/BetterHackdays.git
+cd BetterHackdays
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt</code></pre>
+                    </li>
+                    <li>
+                        <h3 id="qs-connect">Connect your agent</h3>
+                        <p>Pick your client. Run the command from the repository root so the paths resolve.</p>
+                        <div class="tabs" data-tabs>
+                            <div class="tablist" role="tablist" aria-label="MCP client">
+                                <button role="tab" id="tab-cc" aria-controls="panel-cc" aria-selected="true">Claude Code</button>
+                                <button role="tab" id="tab-json" aria-controls="panel-json" aria-selected="false" tabindex="-1">Any MCP client</button>
+                                <button role="tab" id="tab-rest" aria-controls="panel-rest" aria-selected="false" tabindex="-1">REST</button>
+                            </div>
+                            <div role="tabpanel" id="panel-cc" aria-labelledby="tab-cc">
+                                <pre class="code"><code>claude mcp add betterhackdays \
+  -e PYTHONPATH="$PWD" \
+  -e DATABASE_URL="sqlite:///$PWD/betterhackdays.db" \
+  -- "$PWD/.venv/bin/python" -m app.mcp_server</code></pre>
+                            </div>
+                            <div role="tabpanel" id="panel-json" aria-labelledby="tab-json" hidden>
+                                <pre class="code"><code>{
+  "mcpServers": {
+    "betterhackdays": {
+      "command": "/path/to/BetterHackdays/.venv/bin/python",
+      "args": ["-m", "app.mcp_server"],
+      "env": {
+        "PYTHONPATH": "/path/to/BetterHackdays",
+        "DATABASE_URL": "sqlite:////path/to/BetterHackdays/betterhackdays.db"
+      }
+    }
+  }
+}</code></pre>
+                            </div>
+                            <div role="tabpanel" id="panel-rest" aria-labelledby="tab-rest" hidden>
+                                <pre class="code"><code>.venv/bin/uvicorn app.main:app --reload --port 8000
+# in another terminal
+curl -s "http://localhost:8000/rfps/search?q=inbox"</code></pre>
+                                <p class="note">Interactive API docs: <code>http://localhost:8000/docs</code>.</p>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <h3 id="qs-ask">Ask in plain language</h3>
+                        <p>Your agent picks the right tool. Try:</p>
+                        <ul class="prompts">
+                            <li>“List the KnowB RFPs and group them by theme.”</li>
+                            <li>“Compare MarkSweep and Subtracktor for a two-person weekend team.”</li>
+                            <li>“Would a calendar-aware inbox triage idea qualify for the catalogue?”</li>
+                            <li>“Draft an expression of interest for Underminer and show me the preview.”</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h3 id="qs-identity">Add your identity, only to send requests</h3>
+                        <p>Give the server a fine-grained GitHub token for your own account in <code>GITHUB_TOKEN</code>. Keep it in your client's local config or a secret manager, never in a repository or a chat message. The connector resolves your login from the token with GitHub; it never accepts a login you type.</p>
+                    </li>
+                </ol>
+            </section>
+
+            <!-- 03 -->
+            <section class="doc" id="explore" aria-labelledby="h-explore">
+                <p class="doc-no">03</p>
+                <h2 id="h-explore">Explore RFPs</h2>
+                <div class="rule"></div>
+                <p>The connector serves two kinds of entry. <strong>Website RFPs</strong> are the open briefs listed on <a href="https://knowb.run/#use-cases">knowb.run</a>. <strong>Live projects</strong> are public repositories already in motion that welcome help. Idea suggestions are kept separate, so a brainstorm is never mistaken for a commitment.</p>
+
+                <div class="board-wrap">
+                    <div class="board-head" aria-hidden="true">
+                        <span>No.</span><span>Mission</span><span>ID</span><span>Type</span>
+                    </div>
+                    <!-- BEGIN GENERATED:rfps -->
+<ol class="board" aria-label="Approved public RFPs">
+<li class="board-row" id="rfp-shadowcaster" data-search="ShadowCaster Platform Visibility Moderation Policy Event Amplification"><span class="board-no">01</span><span class="board-title">ShadowCaster</span><code class="board-id">shadowcaster</code><span class="board-kind"><span class="led" aria-hidden="true"></span>Website RFP</span><ul class="board-tags"><li>Platform Visibility</li><li>Moderation Policy</li><li>Event Amplification</li></ul><p class="board-summary">Investigate how LinkedIn and Instagram content policies affect reach, moderation, and event visibility for artists, creators, and community workers, especially in marginalized communities.</p></li>
+<li class="board-row" id="rfp-underminer" data-search="Underminer Narrative Reconstruction Source Traceability Context Tracing"><span class="board-no">02</span><span class="board-title">Underminer</span><code class="board-id">underminer</code><span class="board-kind"><span class="led" aria-hidden="true"></span>Website RFP</span><ul class="board-tags"><li>Narrative Reconstruction</li><li>Source Traceability</li><li>Context Tracing</li></ul><p class="board-summary">Extract semantic understanding from paywalled reporting and reconstruct the story from alternate sources plus LLM context-tracing experiments.</p></li>
+<li class="board-row" id="rfp-x-poser" data-search="X-Poser Claim Checking Evidence Retrieval Smoke Test"><span class="board-no">03</span><span class="board-title">X-Poser</span><code class="board-id">x-poser</code><span class="board-kind"><span class="led" aria-hidden="true"></span>Website RFP</span><ul class="board-tags"><li>Claim Checking</li><li>Evidence Retrieval</li><li>Smoke Test</li></ul><p class="board-summary">Submit an X link, run claim checks, and generate a report that marks the post as true, uncertain, or fabricated, with export-ready output for sharing on X.</p></li>
+<li class="board-row" id="rfp-precongnition" data-search="Precongnition Conference Discovery Session Continuity Learning Graph"><span class="board-no">04</span><span class="board-title">Precongnition</span><code class="board-id">precongnition</code><span class="board-kind"><span class="led" aria-hidden="true"></span>Website RFP</span><ul class="board-tags"><li>Conference Discovery</li><li>Session Continuity</li><li>Learning Graph</li></ul><p class="board-summary">Detect missing or mismatched conference talks, tutorials, or demos, then crawl for alternate watch links and nearest neighboring sessions.</p></li>
+<li class="board-row" id="rfp-marksweep" data-search="MarkSweep Inbox Triage Browser Extension User Rules"><span class="board-no">05</span><span class="board-title">MarkSweep</span><code class="board-id">marksweep</code><span class="board-kind"><span class="led" aria-hidden="true"></span>Website RFP</span><ul class="board-tags"><li>Inbox Triage</li><li>Browser Extension</li><li>User Rules</li></ul><p class="board-summary">A browser extension granted control over your active tab that walks every unread message in your open inbox, checks each against relevance rules you control, marks non-matches as read in bulk, and flags matches to stay pinned at the top.</p></li>
+<li class="board-row" id="rfp-subtracktor" data-search="Subtracktor Subscription Escape Inbox Agents Financial Leakage"><span class="board-no">06</span><span class="board-title">Subtracktor</span><code class="board-id">subtracktor</code><span class="board-kind"><span class="led" aria-hidden="true"></span>Website RFP</span><ul class="board-tags"><li>Subscription Escape</li><li>Inbox Agents</li><li>Financial Leakage</li></ul><p class="board-summary">Subtracktor is a browser extension that connects consent-fully to your email inbox once it detects an inbox open in the active tab. It scans only for account-creation and subscription-confirmation messages, then builds a per-account record of every subscription it finds.</p></li>
+<li class="board-row is-live" id="rfp-betterhackdays" data-search="BetterHackdays Shared Hack Day Team Formation Project Continuity"><span class="board-no">07</span><span class="board-title">BetterHackdays</span><code class="board-id">betterhackdays</code><span class="board-kind"><span class="led" aria-hidden="true"></span>Live project</span><ul class="board-tags"><li>Shared Hack Day</li><li>Team Formation</li><li>Project Continuity</li></ul><p class="board-summary">Help hack-day organizers move builders from event rules and tracks to a team, a focused idea, and a shared first-hour plan. BetterHackdays brings event context, opt-in participant profiles, matchmaking, and team workspaces into one live flow.</p></li>
+<li class="board-row is-live" id="rfp-betterlover" data-search="BetterLover Care Planning Cycle-Aware Context Consent First"><span class="board-no">08</span><span class="board-title">BetterLover</span><code class="board-id">betterlover</code><span class="board-kind"><span class="led" aria-hidden="true"></span>Live project</span><ul class="board-tags"><li>Care Planning</li><li>Cycle-Aware Context</li><li>Consent First</li></ul><p class="board-summary">Turn a person&#x27;s chosen cycle, mood, energy, and care preferences into thoughtful, practical suggestions for a partner. The current prototype uses synthetic cycle data and produces a structured plan that can be reviewed before action.</p></li>
+<li class="board-row is-live" id="rfp-sepnu-pues" data-search="Sepnu Pues Daily Follow-Through Opt-In Accountability User-Controlled Sharing"><span class="board-no">09</span><span class="board-title">Sepnu Pues</span><code class="board-id">sepnu-pues</code><span class="board-kind"><span class="led" aria-hidden="true"></span>Live project</span><ul class="board-tags"><li>Daily Follow-Through</li><li>Opt-In Accountability</li><li>User-Controlled Sharing</li></ul><p class="board-summary">Help people follow through on the tasks they set for themselves through a lightweight daily loop. The prototype pairs a task list with optional safe-cartoon generation, an accountability-email queue, and a prefilled social-post draft.</p></li>
+</ol>                    <!-- END GENERATED:rfps -->
+                </div>
+                <p class="note">Generated from the connector's approved public entries when this page was built. Ask the connector for full briefs, scope, outcomes, and safety boundaries.</p>
+
+                <h3 id="explore-tools">The four exploration tools</h3>
+                <div class="grid-2">
+                    <div class="mini"><code>list_project_rfps</code><p>Everything approved, with resources listed apart from RFPs. Filter with <code>visibility</code>.</p></div>
+                    <div class="mini"><code>search_project_rfps</code><p>Full-text search. Pass <code>include_design_resources</code> to also search the public design system.</p></div>
+                    <div class="mini"><code>read_project_rfp</code><p>One brief by ID or title: summary, outcome, scope, and safety boundary.</p></div>
+                    <div class="mini"><code>compare_project_rfps</code><p>Two or more briefs side by side, to help a team choose.</p></div>
+                </div>
+                <p>Building something that should look like it belongs to KnowB? The design tools read an allowlist of public files from the knowb.run repository: the design system, brand guidelines, the Org Book, stylesheets, and the pixel icon dictionary.</p>
+            </section>
+
+            <!-- 04 -->
+            <section class="doc" id="ideas" aria-labelledby="h-ideas">
+                <p class="doc-no">04</p>
+                <h2 id="h-ideas">Refine ideas</h2>
+                <div class="rule"></div>
+                <p>The idea catalogue lives in <a href="https://github.com/knowb-ai/cloud-builder-stack/blob/main/docs/fun-project-and-hackathon-ideas.md" rel="noopener">Cloud Builder Stack</a>, and it stays there. The connector fetches it live each time and fails closed: if the catalogue cannot be read, you get an honest <code>source_unavailable</code>, never a stale copy.</p>
+                <ol class="pipeline">
+                    <li><span class="pl-k">Fetch</span><code>fetch_idea_catalogue</code><p>Read suggestions live, filtered by query or section.</p></li>
+                    <li><span class="pl-k">Qualify</span><code>qualify_idea</code><p>A deterministic check against the catalogue, open public projects, and the knowb.run showcase. Duplicates and showcased work come back <code>not_eligible</code>.</p></li>
+                    <li><span class="pl-k">Propose</span><code>propose_idea_catalogue_addition</code><p>Previews by default. With <code>submit</code>, it opens a pull request to Cloud Builder Stack, only after a human-reviewed rationale, a named reviewer, and that repository's review rules all check out.</p></li>
+                </ol>
+                <p class="note">A proposal is a pull request, never a direct write. Cloud Builder Stack's maintainers merge or decline it.</p>
+            </section>
+
+            <!-- 05 -->
+            <section class="doc" id="requests" aria-labelledby="h-requests">
+                <p class="doc-no">05</p>
+                <h2 id="h-requests">Contributor requests</h2>
+                <div class="rule"></div>
+
+                <div class="alert" role="note">
+                    <span class="alert-icon" aria-hidden="true">!</span>
+                    <div>
+                        <p class="alert-title">A request is not a grant.</p>
+                        <p>Submitting a request never changes who can push to a repository. Access to any repository requires the owner's explicit approval, given by a person, outside the connector. No QR code, slug, match, or submitted form grants access on its own.</p>
+                    </div>
+                </div>
+
+                <h3 id="requests-types">Request types</h3>
+                <!-- BEGIN GENERATED:requests -->
+<div class="table-wrap"><table class="ref-table req-table"><thead><tr><th scope="col">Request type</th><th scope="col">Use it to</th><th scope="col">Requester needs on BetterHackdays</th></tr></thead><tbody>
+<tr id="request-refinement_draft" data-search="RFP Refinement Draft refinement_draft"><td><strong>RFP Refinement Draft</strong><br><code>refinement_draft</code></td><td>Suggest sharper scope, outcomes, or safety notes for an existing RFP brief.</td><td>Read or higher</td></tr>
+<tr id="request-expression_of_interest" data-search="Expression of Interest expression_of_interest"><td><strong>Expression of Interest</strong><br><code>expression_of_interest</code></td><td>Tell the maintainers you want to work on an RFP, with no access asked for.</td><td>Read or higher</td></tr>
+<tr id="request-contribution_access_request" data-search="Project Contribution Access Request contribution_access_request"><td><strong>Project Contribution Access Request</strong><br><code>contribution_access_request</code></td><td>Ask to be considered for contributor access to the project behind an RFP.</td><td>Read or higher</td></tr>
+<tr id="request-work_elevation_request" data-search="Work Elevation Request work_elevation_request"><td><strong>Work Elevation Request</strong><br><code>work_elevation_request</code></td><td>Ask for elevated work on a project you already contribute to.</td><td>Write, maintain, or admin</td></tr>
+</tbody></table></div>                <!-- END GENERATED:requests -->
+
+                <h3 id="requests-flow">How a request travels</h3>
+                <ol class="route">
+                    <li>
+                        <span class="route-no">1</span>
+                        <div><strong>Preview.</strong> Call <code>preview_contributor_request</code> with a type, an RFP ID, the scope you want, and a short message. Nothing is sent. Read the draft, and fix it if it is wrong.</div>
+                    </li>
+                    <li>
+                        <span class="route-no">2</span>
+                        <div><strong>Submit.</strong> Call <code>submit_contributor_request</code>. The connector verifies your GitHub identity from your token and checks your permission on BetterHackdays. If either check fails you get <code>unauthorized</code>, and nothing leaves your machine.</div>
+                    </li>
+                    <li>
+                        <span class="route-no">3</span>
+                        <div><strong>Route.</strong> The request is recorded privately and sent to the maintainers at <a href="mailto:ping@knowb.run">ping@knowb.run</a>. If mail is not configured, you get the complete addressed draft back, plainly marked <em>not sent</em>, to send yourself.</div>
+                    </li>
+                    <li class="route-gate">
+                        <span class="route-no">4</span>
+                        <div><strong>Review.</strong> A repository owner reads it and decides. If they approve access, they send the GitHub invitation themselves. Track your own requests with <code>list_contributor_requests</code>.</div>
+                    </li>
+                </ol>
+                <p class="note">Write requests the way you would write to a person: what you want to work on, why, and what you have built before. Leave out passwords, tokens, and private data.</p>
+            </section>
+
+            <!-- 06 -->
+            <section class="doc" id="boundaries" aria-labelledby="h-boundaries">
+                <p class="doc-no">06</p>
+                <h2 id="h-boundaries">Permission boundaries</h2>
+                <div class="rule"></div>
+                <p>The connector is built to be safe to hand to an agent. These rules are enforced in code and covered by the test suite.</p>
+                <dl class="guarantees">
+                    <div><dt>Identity comes from GitHub, not from you</dt><dd>Request bodies and tool arguments never carry identity or role claims. The connector resolves your login from your token with the GitHub API and ignores any login or role that is typed in.</dd></div>
+                    <div><dt>Exact permission, exact repository</dt><dd>Every write checks your live permission on the one repository it targets. Requests need read or higher on BetterHackdays; work elevation needs write or higher.</dd></div>
+                    <div><dt>The bot's scope is checked too</dt><dd>Writes made through the KnowB GitHub App must fit the scopes that app was installed with, and only on an allowlist of public KnowB repositories.</dd></div>
+                    <div><dt>Access grants are owner-only, and preview-only here</dt><dd><code>grant_repository_access</code> only ever returns a dry run over MCP. Real invitations are sent by the repository owner, by hand.</dd></div>
+                    <div><dt>Failures close, never open</dt><dd>If GitHub, the catalogue, or an installation lookup cannot be reached, the answer is a refusal or <code>source_unavailable</code>, never a guess.</dd></div>
+                    <div><dt>Only public material leaves the connector</dt><dd>RFP briefs are curated summaries. Design resources come from an explicit allowlist of public files. Entries that are not approved for the public never appear on this site.</dd></div>
+                </dl>
+            </section>
+
+            <!-- 07 -->
+            <section class="doc" id="reference" aria-labelledby="h-reference">
+                <p class="doc-no">07</p>
+                <h2 id="h-reference">Reference</h2>
+                <div class="rule"></div>
+                <p>Both tables below are generated from the running code by <code>scripts/build_site.py</code>, and a test fails if they fall out of date.</p>
+
+                <h3 id="reference-tools">MCP tools</h3>
+                <!-- BEGIN GENERATED:tools -->
+<p class="ref-count"><strong>29</strong> tools registered by <code>betterhackdays-hack-day</code>.</p>
+<h4 class="ref-group" id="tools-explore">Explore RFPs</h4>
+<div class="ref-list">
+<article class="ref-item" id="tool-list_project_rfps" data-search="list_project_rfps List approved KnowB project RFPs and public resources separately from idea suggestions."><h5><a class="anchor" href="#tool-list_project_rfps" aria-label="Link to list_project_rfps">#</a><code>list_project_rfps</code></h5><p>List approved KnowB project RFPs and public resources separately from idea suggestions.</p><pre class="sig"><code><span class="sig-n">list_project_rfps</span>(<span class="sig-p">visibility</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>)</code></pre></article>
+<article class="ref-item" id="tool-search_project_rfps" data-search="search_project_rfps Search approved KnowB project RFPs and optionally allowlisted public design resources."><h5><a class="anchor" href="#tool-search_project_rfps" aria-label="Link to search_project_rfps">#</a><code>search_project_rfps</code></h5><p>Search approved KnowB project RFPs and optionally allowlisted public design resources.</p><pre class="sig"><code><span class="sig-n">search_project_rfps</span>(<span class="sig-p">query</span>: <span class="sig-t">str</span>, <span class="sig-p">include_design_resources</span>: <span class="sig-t">bool</span> = <span class="sig-d">False</span>)</code></pre></article>
+<article class="ref-item" id="tool-read_project_rfp" data-search="read_project_rfp Read a single approved KnowB project RFP brief by ID or title."><h5><a class="anchor" href="#tool-read_project_rfp" aria-label="Link to read_project_rfp">#</a><code>read_project_rfp</code></h5><p>Read a single approved KnowB project RFP brief by ID or title.</p><pre class="sig"><code><span class="sig-n">read_project_rfp</span>(<span class="sig-p">rfp_id</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-compare_project_rfps" data-search="compare_project_rfps Compare two or more approved KnowB project RFPs side-by-side."><h5><a class="anchor" href="#tool-compare_project_rfps" aria-label="Link to compare_project_rfps">#</a><code>compare_project_rfps</code></h5><p>Compare two or more approved KnowB project RFPs side-by-side.</p><pre class="sig"><code><span class="sig-n">compare_project_rfps</span>(<span class="sig-p">rfp_ids</span>: <span class="sig-t">list[str]</span>)</code></pre></article>
+</div>
+<h4 class="ref-group" id="tools-design">Public design resources</h4>
+<div class="ref-list">
+<article class="ref-item" id="tool-list_design_resources" data-search="list_design_resources List explicitly allowlisted public design philosophy documents and assets from knowb-ai.github.io."><h5><a class="anchor" href="#tool-list_design_resources" aria-label="Link to list_design_resources">#</a><code>list_design_resources</code></h5><p>List explicitly allowlisted public design philosophy documents and assets from knowb-ai.github.io.</p><pre class="sig"><code><span class="sig-n">list_design_resources</span>()</code></pre></article>
+<article class="ref-item" id="tool-search_design_resources" data-search="search_design_resources Search allowlisted public design philosophy documents and assets."><h5><a class="anchor" href="#tool-search_design_resources" aria-label="Link to search_design_resources">#</a><code>search_design_resources</code></h5><p>Search allowlisted public design philosophy documents and assets.</p><pre class="sig"><code><span class="sig-n">search_design_resources</span>(<span class="sig-p">query</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-read_design_resource" data-search="read_design_resource Read an allowlisted public design philosophy document or asset from knowb-ai.github.io."><h5><a class="anchor" href="#tool-read_design_resource" aria-label="Link to read_design_resource">#</a><code>read_design_resource</code></h5><p>Read an allowlisted public design philosophy document or asset from knowb-ai.github.io.</p><pre class="sig"><code><span class="sig-n">read_design_resource</span>(<span class="sig-p">path</span>: <span class="sig-t">str</span>, <span class="sig-p">repo</span>: <span class="sig-t">str</span> = <span class="sig-d">&#x27;knowb-ai/knowb-ai.github.io&#x27;</span>)</code></pre></article>
+</div>
+<h4 class="ref-group" id="tools-ideas">Refine ideas</h4>
+<div class="ref-list">
+<article class="ref-item" id="tool-fetch_idea_catalogue" data-search="fetch_idea_catalogue Fetch the canonical Cloud Builder Stack idea catalogue live and return ideation-only suggestions."><h5><a class="anchor" href="#tool-fetch_idea_catalogue" aria-label="Link to fetch_idea_catalogue">#</a><code>fetch_idea_catalogue</code></h5><p>Fetch the canonical Cloud Builder Stack idea catalogue live and return ideation-only suggestions.</p><pre class="sig"><code><span class="sig-n">fetch_idea_catalogue</span>(<span class="sig-p">query</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">section</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">limit</span>: <span class="sig-t">Optional[int]</span> = <span class="sig-d">None</span>)</code></pre></article>
+<article class="ref-item" id="tool-qualify_idea" data-search="qualify_idea Deterministically qualify a candidate idea against the canonical catalogue, open public projects, and showcase."><h5><a class="anchor" href="#tool-qualify_idea" aria-label="Link to qualify_idea">#</a><code>qualify_idea</code></h5><p>Deterministically qualify a candidate idea against the canonical catalogue, open public projects, and showcase.</p><pre class="sig"><code><span class="sig-n">qualify_idea</span>(<span class="sig-p">title</span>: <span class="sig-t">str</span>, <span class="sig-p">summary</span>: <span class="sig-t">str</span>, <span class="sig-p">alignment_evidence</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">human_reviewed_rationale</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">reviewed_by</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>)</code></pre></article>
+<article class="ref-item" id="tool-propose_idea_catalogue_addition" data-search="propose_idea_catalogue_addition Preview and optionally submit a qualified, human-reviewed idea as a PR to Cloud Builder Stack."><h5><a class="anchor" href="#tool-propose_idea_catalogue_addition" aria-label="Link to propose_idea_catalogue_addition">#</a><code>propose_idea_catalogue_addition</code> <span class="badge">Writes with review</span></h5><p>Preview and optionally submit a qualified, human-reviewed idea as a PR to Cloud Builder Stack.</p><pre class="sig"><code><span class="sig-n">propose_idea_catalogue_addition</span>(<span class="sig-p">title</span>: <span class="sig-t">str</span>, <span class="sig-p">summary</span>: <span class="sig-t">str</span>, <span class="sig-p">alignment_evidence</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">human_reviewed_rationale</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">reviewed_by</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">section</span>: <span class="sig-t">str</span> = <span class="sig-d">&#x27;10. Stronger Actual AI System Ideas&#x27;</span>, <span class="sig-p">submit</span>: <span class="sig-t">bool</span> = <span class="sig-d">False</span>)</code></pre></article>
+</div>
+<h4 class="ref-group" id="tools-requests">Contributor requests</h4>
+<div class="ref-list">
+<article class="ref-item" id="tool-preview_contributor_request" data-search="preview_contributor_request Preview a refinement draft, expression of interest, contribution-access request, or work-elevation request."><h5><a class="anchor" href="#tool-preview_contributor_request" aria-label="Link to preview_contributor_request">#</a><code>preview_contributor_request</code></h5><p>Preview a refinement draft, expression of interest, contribution-access request, or work-elevation request.</p><pre class="sig"><code><span class="sig-n">preview_contributor_request</span>(<span class="sig-p">request_type</span>: <span class="sig-t">str</span>, <span class="sig-p">rfp_id</span>: <span class="sig-t">str</span>, <span class="sig-p">requested_scope</span>: <span class="sig-t">str</span>, <span class="sig-p">message</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-submit_contributor_request" data-search="submit_contributor_request Submit a contributor request after verifying caller identity and write permission on BetterHackdays."><h5><a class="anchor" href="#tool-submit_contributor_request" aria-label="Link to submit_contributor_request">#</a><code>submit_contributor_request</code> <span class="badge">Verified identity</span></h5><p>Submit a contributor request after verifying caller identity and write permission on BetterHackdays.</p><pre class="sig"><code><span class="sig-n">submit_contributor_request</span>(<span class="sig-p">request_type</span>: <span class="sig-t">str</span>, <span class="sig-p">rfp_id</span>: <span class="sig-t">str</span>, <span class="sig-p">requested_scope</span>: <span class="sig-t">str</span>, <span class="sig-p">message</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-list_contributor_requests" data-search="list_contributor_requests List private contributor requests for the verified requester or a verified BetterHackdays maintainer/admin."><h5><a class="anchor" href="#tool-list_contributor_requests" aria-label="Link to list_contributor_requests">#</a><code>list_contributor_requests</code> <span class="badge">Verified identity</span></h5><p>List private contributor requests for the verified requester or a verified BetterHackdays maintainer/admin.</p><pre class="sig"><code><span class="sig-n">list_contributor_requests</span>()</code></pre></article>
+</div>
+<h4 class="ref-group" id="tools-guards">Permission guards</h4>
+<div class="ref-list">
+<article class="ref-item" id="tool-authorize_github_mutation" data-search="authorize_github_mutation Verify authenticated human identity, exact repository permission, and Kenobi scope before any GitHub write."><h5><a class="anchor" href="#tool-authorize_github_mutation" aria-label="Link to authorize_github_mutation">#</a><code>authorize_github_mutation</code> <span class="badge">Verified identity</span></h5><p>Verify authenticated human identity, exact repository permission, and Kenobi scope before any GitHub write.</p><pre class="sig"><code><span class="sig-n">authorize_github_mutation</span>(<span class="sig-p">operation</span>: <span class="sig-t">str</span>, <span class="sig-p">target_repo</span>: <span class="sig-t">str</span>, <span class="sig-p">expected_target_repo</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>)</code></pre></article>
+<article class="ref-item" id="tool-grant_repository_access" data-search="grant_repository_access Separate owner-only, explicitly confirmed repository access grant scoped to an allowlisted repository."><h5><a class="anchor" href="#tool-grant_repository_access" aria-label="Link to grant_repository_access">#</a><code>grant_repository_access</code> <span class="badge">Preview only</span></h5><p>Separate owner-only, explicitly confirmed repository access grant scoped to an allowlisted repository.</p><pre class="sig"><code><span class="sig-n">grant_repository_access</span>(<span class="sig-p">target_repo</span>: <span class="sig-t">str</span>, <span class="sig-p">grantee_login</span>: <span class="sig-t">str</span>, <span class="sig-p">permission</span>: <span class="sig-t">str</span> = <span class="sig-d">&#x27;write&#x27;</span>, <span class="sig-p">requester_login</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">confirmed</span>: <span class="sig-t">bool</span> = <span class="sig-d">False</span>)</code></pre></article>
+</div>
+<h4 class="ref-group" id="tools-hackday">Hack Day room</h4>
+<div class="ref-list">
+<article class="ref-item" id="tool-connect_harness" data-search="connect_harness Connect a coding harness and create an active participant profile."><h5><a class="anchor" href="#tool-connect_harness" aria-label="Link to connect_harness">#</a><code>connect_harness</code></h5><p>Connect a coding harness and create an active participant profile.</p><pre class="sig"><code><span class="sig-n">connect_harness</span>(<span class="sig-p">harness_id</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-update_profile" data-search="update_profile Update profile fields used by matchmaking and planning."><h5><a class="anchor" href="#tool-update_profile" aria-label="Link to update_profile">#</a><code>update_profile</code></h5><p>Update profile fields used by matchmaking and planning.</p><pre class="sig"><code><span class="sig-n">update_profile</span>(<span class="sig-p">harness_id</span>: <span class="sig-t">str</span>, <span class="sig-p">display_label</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">skills</span>: <span class="sig-t">Optional[list[str]]</span> = <span class="sig-d">None</span>, <span class="sig-p">interests</span>: <span class="sig-t">Optional[list[str]]</span> = <span class="sig-d">None</span>, <span class="sig-p">preferred_role</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">project_vibe</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>, <span class="sig-p">looking_for</span>: <span class="sig-t">Optional[list[str]]</span> = <span class="sig-d">None</span>, <span class="sig-p">availability</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>)</code></pre></article>
+<article class="ref-item" id="tool-start_survey" data-search="start_survey Start or restart the Socratic onboarding survey."><h5><a class="anchor" href="#tool-start_survey" aria-label="Link to start_survey">#</a><code>start_survey</code></h5><p>Start or restart the Socratic onboarding survey.</p><pre class="sig"><code><span class="sig-n">start_survey</span>(<span class="sig-p">harness_id</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-answer_survey" data-search="answer_survey Record one onboarding survey answer."><h5><a class="anchor" href="#tool-answer_survey" aria-label="Link to answer_survey">#</a><code>answer_survey</code></h5><p>Record one onboarding survey answer.</p><pre class="sig"><code><span class="sig-n">answer_survey</span>(<span class="sig-p">harness_id</span>: <span class="sig-t">str</span>, <span class="sig-p">answer</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-get_survey_state" data-search="get_survey_state Read survey progress without advancing it."><h5><a class="anchor" href="#tool-get_survey_state" aria-label="Link to get_survey_state">#</a><code>get_survey_state</code></h5><p>Read survey progress without advancing it.</p><pre class="sig"><code><span class="sig-n">get_survey_state</span>(<span class="sig-p">harness_id</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-get_match_cards" data-search="get_match_cards Return anonymized, scored candidate match cards."><h5><a class="anchor" href="#tool-get_match_cards" aria-label="Link to get_match_cards">#</a><code>get_match_cards</code></h5><p>Return anonymized, scored candidate match cards.</p><pre class="sig"><code><span class="sig-n">get_match_cards</span>(<span class="sig-p">harness_id</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-like_profile" data-search="like_profile Like a candidate and create a match when the like is mutual."><h5><a class="anchor" href="#tool-like_profile" aria-label="Link to like_profile">#</a><code>like_profile</code></h5><p>Like a candidate and create a match when the like is mutual.</p><pre class="sig"><code><span class="sig-n">like_profile</span>(<span class="sig-p">from_harness_id</span>: <span class="sig-t">str</span>, <span class="sig-p">to_harness_id</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-pass_profile" data-search="pass_profile Pass on a candidate without creating a match."><h5><a class="anchor" href="#tool-pass_profile" aria-label="Link to pass_profile">#</a><code>pass_profile</code></h5><p>Pass on a candidate without creating a match.</p><pre class="sig"><code><span class="sig-n">pass_profile</span>(<span class="sig-p">from_harness_id</span>: <span class="sig-t">str</span>, <span class="sig-p">to_harness_id</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-get_matches" data-search="get_matches Return open matches for a harness."><h5><a class="anchor" href="#tool-get_matches" aria-label="Link to get_matches">#</a><code>get_matches</code></h5><p>Return open matches for a harness.</p><pre class="sig"><code><span class="sig-n">get_matches</span>(<span class="sig-p">harness_id</span>: <span class="sig-t">str</span>)</code></pre></article>
+<article class="ref-item" id="tool-ingest_event_text" data-search="ingest_event_text Normalize pasted hackathon text into event context."><h5><a class="anchor" href="#tool-ingest_event_text" aria-label="Link to ingest_event_text">#</a><code>ingest_event_text</code></h5><p>Normalize pasted hackathon text into event context.</p><pre class="sig"><code><span class="sig-n">ingest_event_text</span>(<span class="sig-p">text</span>: <span class="sig-t">str</span>, <span class="sig-p">source_label</span>: <span class="sig-t">str</span> = <span class="sig-d">&#x27;Pasted event text&#x27;</span>, <span class="sig-p">source_url</span>: <span class="sig-t">str | None</span> = <span class="sig-d">None</span>)</code></pre></article>
+<article class="ref-item" id="tool-rank_idea_suggestions" data-search="rank_idea_suggestions Rank concise idea suggestions from event and team signals."><h5><a class="anchor" href="#tool-rank_idea_suggestions" aria-label="Link to rank_idea_suggestions">#</a><code>rank_idea_suggestions</code></h5><p>Rank concise idea suggestions from event and team signals.</p><pre class="sig"><code><span class="sig-n">rank_idea_suggestions</span>(<span class="sig-p">event</span>: <span class="sig-t">Any</span>, <span class="sig-p">profile</span>: <span class="sig-t">Any</span> = <span class="sig-d">None</span>, <span class="sig-p">team</span>: <span class="sig-t">Optional[list[Any]]</span> = <span class="sig-d">None</span>, <span class="sig-p">topics</span>: <span class="sig-t">Optional[list[str]]</span> = <span class="sig-d">None</span>)</code></pre></article>
+<article class="ref-item" id="tool-generate_process_timeline" data-search="generate_process_timeline Generate a deadline-aware Hack Day execution timeline."><h5><a class="anchor" href="#tool-generate_process_timeline" aria-label="Link to generate_process_timeline">#</a><code>generate_process_timeline</code></h5><p>Generate a deadline-aware Hack Day execution timeline.</p><pre class="sig"><code><span class="sig-n">generate_process_timeline</span>(<span class="sig-p">event</span>: <span class="sig-t">Any</span>, <span class="sig-p">profile</span>: <span class="sig-t">Any</span> = <span class="sig-d">None</span>, <span class="sig-p">team</span>: <span class="sig-t">Optional[list[Any]]</span> = <span class="sig-d">None</span>, <span class="sig-p">hack_day</span>: <span class="sig-t">Any</span> = <span class="sig-d">None</span>, <span class="sig-p">team_room</span>: <span class="sig-t">Any</span> = <span class="sig-d">None</span>, <span class="sig-p">workspace_repo</span>: <span class="sig-t">Any</span> = <span class="sig-d">None</span>)</code></pre></article>
+<article class="ref-item" id="tool-generate_prep_checklist" data-search="generate_prep_checklist Generate immediate prep tasks and first-hour focus."><h5><a class="anchor" href="#tool-generate_prep_checklist" aria-label="Link to generate_prep_checklist">#</a><code>generate_prep_checklist</code></h5><p>Generate immediate prep tasks and first-hour focus.</p><pre class="sig"><code><span class="sig-n">generate_prep_checklist</span>(<span class="sig-p">event</span>: <span class="sig-t">Any</span>, <span class="sig-p">profile</span>: <span class="sig-t">Any</span> = <span class="sig-d">None</span>, <span class="sig-p">team</span>: <span class="sig-t">Optional[list[Any]]</span> = <span class="sig-d">None</span>, <span class="sig-p">hack_day</span>: <span class="sig-t">Any</span> = <span class="sig-d">None</span>, <span class="sig-p">team_room</span>: <span class="sig-t">Any</span> = <span class="sig-d">None</span>, <span class="sig-p">workspace_repo</span>: <span class="sig-t">Any</span> = <span class="sig-d">None</span>)</code></pre></article>
+<article class="ref-item" id="tool-resolve_slug" data-search="resolve_slug Resolve Hack Day codes, standalone slugs, and room keywords."><h5><a class="anchor" href="#tool-resolve_slug" aria-label="Link to resolve_slug">#</a><code>resolve_slug</code></h5><p>Resolve Hack Day codes, standalone slugs, and room keywords.</p><pre class="sig"><code><span class="sig-n">resolve_slug</span>(<span class="sig-p">raw_input</span>: <span class="sig-t">str</span>, <span class="sig-p">hack_days</span>: <span class="sig-t">list[dict[str, Any]]</span>, <span class="sig-p">standalone_slugs</span>: <span class="sig-t">Optional[list[dict[str, Any]]]</span> = <span class="sig-d">None</span>, <span class="sig-p">caller_participant_id</span>: <span class="sig-t">Optional[str]</span> = <span class="sig-d">None</span>)</code></pre></article>
+</div>                <!-- END GENERATED:tools -->
+
+                <h3 id="reference-rest">REST API</h3>
+                <p>The REST routes call the same functions as the MCP tools. Routes marked <span class="badge">Bearer token</span> read your identity from an <code>Authorization: Bearer</code> header and nothing else.</p>
+                <!-- BEGIN GENERATED:rest -->
+<p class="ref-count"><strong>28</strong> routes served by <code>app.main:app</code>. Interactive docs run at <code>/docs</code> on any local server.</p>
+<h4 class="ref-group" id="rest-rfps">RFPs</h4>
+<div class="table-wrap"><table class="ref-table"><thead><tr><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Auth</th></tr></thead><tbody>
+<tr id="route-get-rfps" data-search="GET /rfps"><td><span class="verb verb-get">GET</span></td><td><code>/rfps</code></td><td></td></tr>
+<tr id="route-get-rfps-search" data-search="GET /rfps/search"><td><span class="verb verb-get">GET</span></td><td><code>/rfps/search</code></td><td></td></tr>
+<tr id="route-post-rfps-compare" data-search="POST /rfps/compare"><td><span class="verb verb-post">POST</span></td><td><code>/rfps/compare</code></td><td></td></tr>
+<tr id="route-get-rfps-rfp-id" data-search="GET /rfps/{rfp_id}"><td><span class="verb verb-get">GET</span></td><td><code>/rfps/{rfp_id}</code></td><td></td></tr>
+</tbody></table></div>
+<h4 class="ref-group" id="rest-design">Design resources</h4>
+<div class="table-wrap"><table class="ref-table"><thead><tr><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Auth</th></tr></thead><tbody>
+<tr id="route-get-design-resources" data-search="GET /design-resources"><td><span class="verb verb-get">GET</span></td><td><code>/design-resources</code></td><td></td></tr>
+<tr id="route-get-design-resources-search" data-search="GET /design-resources/search"><td><span class="verb verb-get">GET</span></td><td><code>/design-resources/search</code></td><td></td></tr>
+<tr id="route-post-design-resources-read" data-search="POST /design-resources/read"><td><span class="verb verb-post">POST</span></td><td><code>/design-resources/read</code></td><td></td></tr>
+</tbody></table></div>
+<h4 class="ref-group" id="rest-ideas">Ideas</h4>
+<div class="table-wrap"><table class="ref-table"><thead><tr><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Auth</th></tr></thead><tbody>
+<tr id="route-get-ideas-catalogue" data-search="GET /ideas/catalogue"><td><span class="verb verb-get">GET</span></td><td><code>/ideas/catalogue</code></td><td></td></tr>
+<tr id="route-post-ideas-qualify" data-search="POST /ideas/qualify"><td><span class="verb verb-post">POST</span></td><td><code>/ideas/qualify</code></td><td></td></tr>
+<tr id="route-post-ideas-propose" data-search="POST /ideas/propose"><td><span class="verb verb-post">POST</span></td><td><code>/ideas/propose</code></td><td><span class="badge">Bearer token</span></td></tr>
+</tbody></table></div>
+<h4 class="ref-group" id="rest-requests">Contributor requests</h4>
+<div class="table-wrap"><table class="ref-table"><thead><tr><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Auth</th></tr></thead><tbody>
+<tr id="route-post-contributor-requests-preview" data-search="POST /contributor/requests/preview"><td><span class="verb verb-post">POST</span></td><td><code>/contributor/requests/preview</code></td><td></td></tr>
+<tr id="route-post-contributor-requests-submit" data-search="POST /contributor/requests/submit"><td><span class="verb verb-post">POST</span></td><td><code>/contributor/requests/submit</code></td><td><span class="badge">Bearer token</span></td></tr>
+<tr id="route-post-contributor-requests-list" data-search="POST /contributor/requests/list"><td><span class="verb verb-post">POST</span></td><td><code>/contributor/requests/list</code></td><td><span class="badge">Bearer token</span></td></tr>
+</tbody></table></div>
+<h4 class="ref-group" id="rest-hackday">Hack Day room</h4>
+<div class="table-wrap"><table class="ref-table"><thead><tr><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Auth</th></tr></thead><tbody>
+<tr id="route-get-health" data-search="GET /health"><td><span class="verb verb-get">GET</span></td><td><code>/health</code></td><td></td></tr>
+<tr id="route-post-connect" data-search="POST /connect"><td><span class="verb verb-post">POST</span></td><td><code>/connect</code></td><td></td></tr>
+<tr id="route-post-profile-update" data-search="POST /profile/update"><td><span class="verb verb-post">POST</span></td><td><code>/profile/update</code></td><td></td></tr>
+<tr id="route-post-event-ingest-text" data-search="POST /event/ingest/text"><td><span class="verb verb-post">POST</span></td><td><code>/event/ingest/text</code></td><td></td></tr>
+<tr id="route-post-planner-ideas" data-search="POST /planner/ideas"><td><span class="verb verb-post">POST</span></td><td><code>/planner/ideas</code></td><td></td></tr>
+<tr id="route-post-planner-timeline" data-search="POST /planner/timeline"><td><span class="verb verb-post">POST</span></td><td><code>/planner/timeline</code></td><td></td></tr>
+<tr id="route-post-planner-checklist" data-search="POST /planner/checklist"><td><span class="verb verb-post">POST</span></td><td><code>/planner/checklist</code></td><td></td></tr>
+<tr id="route-post-slug-resolve" data-search="POST /slug/resolve"><td><span class="verb verb-post">POST</span></td><td><code>/slug/resolve</code></td><td></td></tr>
+<tr id="route-get-matchmaking-cards" data-search="GET /matchmaking/cards"><td><span class="verb verb-get">GET</span></td><td><code>/matchmaking/cards</code></td><td></td></tr>
+<tr id="route-post-matchmaking-like" data-search="POST /matchmaking/like"><td><span class="verb verb-post">POST</span></td><td><code>/matchmaking/like</code></td><td></td></tr>
+<tr id="route-post-matchmaking-pass" data-search="POST /matchmaking/pass"><td><span class="verb verb-post">POST</span></td><td><code>/matchmaking/pass</code></td><td></td></tr>
+<tr id="route-get-matches" data-search="GET /matches"><td><span class="verb verb-get">GET</span></td><td><code>/matches</code></td><td></td></tr>
+<tr id="route-post-survey-start" data-search="POST /survey/start"><td><span class="verb verb-post">POST</span></td><td><code>/survey/start</code></td><td></td></tr>
+<tr id="route-post-survey-answer" data-search="POST /survey/answer"><td><span class="verb verb-post">POST</span></td><td><code>/survey/answer</code></td><td></td></tr>
+<tr id="route-get-survey-state" data-search="GET /survey/state"><td><span class="verb verb-get">GET</span></td><td><code>/survey/state</code></td><td></td></tr>
+</tbody></table></div>                <!-- END GENERATED:rest -->
+            </section>
+
+            <!-- 08 -->
+            <section class="doc" id="configuration" aria-labelledby="h-configuration">
+                <p class="doc-no">08</p>
+                <h2 id="h-configuration">Configuration</h2>
+                <div class="rule"></div>
+                <p>All settings are environment variables. Copy <code>.env.example</code> to <code>.env</code> for local runs. Everything is optional for reading.</p>
+                <div class="table-wrap">
+                    <table class="ref-table">
+                        <thead><tr><th scope="col">Variable</th><th scope="col">Default</th><th scope="col">Purpose</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>DATABASE_URL</code></td><td><code>sqlite:///./betterhackdays.db</code></td><td>Local store for Hack Day state and private request records.</td></tr>
+                            <tr><td><code>GITHUB_TOKEN</code></td><td>unset</td><td>Your own GitHub token. Identifies you for submits and lists over MCP.</td></tr>
+                            <tr><td><code>KENOBI_GITHUB_TOKEN</code></td><td>unset</td><td>Maintainers only: KnowB GitHub App installation token for reviewed writes.</td></tr>
+                            <tr><td><code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_USERNAME</code>, <code>SMTP_PASSWORD</code>, <code>SMTP_FROM</code></td><td>unset, port <code>587</code></td><td>Mail route for requests. Without it, submits return an unsent draft.</td></tr>
+                            <tr><td><code>APP_NAME</code></td><td><code>betterhackdays-matchmaking</code></td><td>Title of the REST app.</td></tr>
+                            <tr><td><code>SEED_PROFILES</code></td><td><code>true</code></td><td>Seeds demo profiles for the Hack Day room.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 09 -->
+            <section class="doc" id="deploy" aria-labelledby="h-deploy">
+                <p class="doc-no">09</p>
+                <h2 id="h-deploy">Deploying this site</h2>
+                <div class="rule"></div>
+                <p>This manual is a static page in <code>site/</code>, published by GitHub Pages from the BetterHackdays repository at <code>hack.knowb.run</code>. It has no build step beyond rendering its reference blocks, no tracking, and no third-party scripts.</p>
+
+                <h3 id="deploy-pipeline">Pipeline</h3>
+                <ol class="pipeline">
+                    <li><span class="pl-k">Check</span><code>build_site.py --check</code><p>On every pull request, the docs test confirms the reference blocks match the code.</p></li>
+                    <li><span class="pl-k">Build</span><code>.github/workflows/pages.yml</code><p>On a push to <code>main</code> that touches the site or the connector, the workflow checks the page again and uploads <code>site/</code>.</p></li>
+                    <li><span class="pl-k">Serve</span><code>hack.knowb.run</code><p>GitHub Pages serves the artifact over HTTPS with a certificate it issues for the custom domain.</p></li>
+                </ol>
+
+                <h3 id="deploy-domain">Custom domain setup</h3>
+                <p>Done once, by a repository admin and the owner of the <code>knowb.run</code> DNS zone.</p>
+                <ol class="steps steps-tight">
+                    <li><strong>Enable Pages from Actions.</strong> Repository settings, Pages, Source: <em>GitHub Actions</em>. Or:
+                        <pre class="code"><code>gh api -X POST repos/knowb-ai/BetterHackdays/pages -f build_type=workflow</code></pre></li>
+                    <li><strong>Add the DNS record</strong> at the <code>knowb.run</code> DNS host:
+                        <div class="table-wrap"><table class="ref-table"><thead><tr><th scope="col">Type</th><th scope="col">Host</th><th scope="col">Answer</th></tr></thead>
+                        <tbody><tr><td><code>CNAME</code></td><td><code>hack</code></td><td><code>knowb-ai.github.io</code></td></tr></tbody></table></div></li>
+                    <li><strong>Set the custom domain.</strong> Pages deployed by Actions ignore a <code>CNAME</code> file, so set it in settings or with:
+                        <pre class="code"><code>gh api -X PUT repos/knowb-ai/BetterHackdays/pages -f cname=hack.knowb.run</code></pre>
+                        <code>site/CNAME</code> is kept in the repository as a record of the intended domain.</li>
+                    <li><strong>Enforce HTTPS</strong> once GitHub has issued the certificate, usually within an hour of DNS resolving:
+                        <pre class="code"><code>gh api -X PUT repos/knowb-ai/BetterHackdays/pages -F https_enforced=true</code></pre></li>
+                    <li><strong>Verify the domain</strong> for the <code>knowb-ai</code> organization under organization settings, Pages, so no other account can claim <code>hack.knowb.run</code>.</li>
+                </ol>
+
+                <h3 id="deploy-verify">Verify a deployment</h3>
+                <pre class="code"><code>dig +short hack.knowb.run CNAME      # knowb-ai.github.io.
+curl -sI https://hack.knowb.run | head -1   # HTTP/2 200
+gh api repos/knowb-ai/BetterHackdays/pages --jq '.cname, .https_enforced, .status'</code></pre>
+                <p class="note">Local preview: <code>python -m http.server -d site 8080</code>, then open <code>http://localhost:8080</code>.</p>
+            </section>
+
+            <!-- 10 -->
+            <section class="doc" id="faq" aria-labelledby="h-faq">
+                <p class="doc-no">10</p>
+                <h2 id="h-faq">FAQ</h2>
+                <div class="rule"></div>
+                <div class="faq">
+                    <details>
+                        <summary>Do I need permission to read RFPs?</summary>
+                        <p>No. Listing, searching, reading, and comparing RFPs, reading design resources, and qualifying ideas need no account and no token.</p>
+                    </details>
+                    <details>
+                        <summary>I submitted an access request. Can I push now?</summary>
+                        <p>No. A request is not a grant. A repository owner reviews it, and only their explicit approval, sent as a GitHub invitation, gives you access.</p>
+                    </details>
+                    <details>
+                        <summary>Why does my submit say <code>unauthorized</code>?</summary>
+                        <p>The connector could not verify you. Check that <code>GITHUB_TOKEN</code> belongs to your own account and is current, and that your account has the permission the request type needs on BetterHackdays. Work elevation needs write or higher.</p>
+                    </details>
+                    <details>
+                        <summary>My submit came back “not sent”. Is that an error?</summary>
+                        <p>It means mail is not configured where the server runs. You get the full addressed draft so you can send it to <a href="mailto:ping@knowb.run">ping@knowb.run</a> yourself. The request is still recorded locally.</p>
+                    </details>
+                    <details>
+                        <summary>Why is the idea catalogue not on this site?</summary>
+                        <p>It has one home, Cloud Builder Stack, so it never drifts. The connector reads it live, and this page links to it.</p>
+                    </details>
+                    <details>
+                        <summary>Can I host my own connector?</summary>
+                        <p>Yes. It is a FastAPI app and a FastMCP server. Run it locally as shown in the quickstart, or anywhere Python runs. Requests still go to KnowB maintainers for review.</p>
+                    </details>
+                </div>
+            </section>
+
+            <!-- 11 -->
+            <section class="doc" id="contributing" aria-labelledby="h-contributing">
+                <p class="doc-no">11</p>
+                <h2 id="h-contributing">Contributing</h2>
+                <div class="rule"></div>
+                <p>BetterHackdays is developed in the open at <a href="https://github.com/knowb-ai/BetterHackdays" rel="noopener">knowb-ai/BetterHackdays</a>. Issues and small, reviewable pull requests are welcome.</p>
+                <ul class="ticks">
+                    <li>Run the test suite before you open a pull request: <code>.venv/bin/python -m unittest discover -s tests -v</code>.</li>
+                    <li>If you change <code>README.md</code>, <code>agents.md</code>, or <code>docs/*.md</code>, update their OKF checksums and run <code>python scripts/validate_okf.py</code>.</li>
+                    <li>If you change the connector's tools or routes, run <code>python scripts/build_site.py</code> so this manual stays in step.</li>
+                    <li>Use conventional commit prefixes: <code>feat:</code>, <code>fix:</code>, <code>chore:</code>.</li>
+                    <li>Read <a href="https://github.com/knowb-ai/BetterHackdays/blob/main/agents.md" rel="noopener">agents.md</a> if an agent is working with you.</li>
+                </ul>
+                <div class="grid-2">
+                    <div class="mini"><span class="card-k">License</span><p>No license has been declared yet. Until one is, the code is public to read but not licensed for reuse. Ask at <a href="mailto:ping@knowb.run">ping@knowb.run</a>.</p></div>
+                    <div class="mini"><span class="card-k">Security</span><p>Found a way around a permission check? Please email <a href="mailto:ping@knowb.run">ping@knowb.run</a> instead of opening a public issue.</p></div>
+                </div>
+            </section>
+        </article>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="footer-inner">
+        <div>
+            <a class="wordmark" href="https://knowb.run/">knowb<span class="dot">.</span>run</a>
+            <p>BetterHackdays is a KnowB AI Systems project. This manual is generated in part from the connector's own code.</p>
+        </div>
+        <ul class="footer-links">
+            <li><a href="https://knowb.run/">knowb.run</a></li>
+            <li><a href="https://github.com/knowb-ai/BetterHackdays" rel="noopener">Source</a></li>
+            <li><a href="https://github.com/knowb-ai/BetterHackdays/issues" rel="noopener">Issues</a></li>
+            <li><a href="mailto:ping@knowb.run">ping@knowb.run</a></li>
+        </ul>
+    </div>
+</footer>
+
+<div class="palette" id="palette" role="dialog" aria-modal="true" aria-label="Search the manual" hidden>
+    <div class="palette-box cabinet">
+        <label class="sr-only" for="palette-input">Search the manual</label>
+        <input id="palette-input" type="search" placeholder="Search tools, routes, RFPs, sections" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="palette-results" aria-autocomplete="list">
+        <ul id="palette-results" class="palette-results" role="listbox" aria-label="Results"></ul>
+        <p class="palette-hint"><kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</p>
+    </div>
+</div>
+</body>
+</html>

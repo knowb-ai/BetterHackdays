@@ -1,0 +1,976 @@
+{
+  "server": "betterhackdays-hack-day",
+  "tool_count": 29,
+  "tool_groups": [
+    {
+      "key": "explore",
+      "title": "Explore RFPs",
+      "tools": [
+        {
+          "name": "list_project_rfps",
+          "description": "List approved KnowB project RFPs and public resources separately from idea suggestions.",
+          "badge": "",
+          "params": [
+            {
+              "name": "visibility",
+              "type": "Optional[str]",
+              "default": "None"
+            }
+          ]
+        },
+        {
+          "name": "search_project_rfps",
+          "description": "Search approved KnowB project RFPs and optionally allowlisted public design resources.",
+          "badge": "",
+          "params": [
+            {
+              "name": "query",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "include_design_resources",
+              "type": "bool",
+              "default": "False"
+            }
+          ]
+        },
+        {
+          "name": "read_project_rfp",
+          "description": "Read a single approved KnowB project RFP brief by ID or title.",
+          "badge": "",
+          "params": [
+            {
+              "name": "rfp_id",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "compare_project_rfps",
+          "description": "Compare two or more approved KnowB project RFPs side-by-side.",
+          "badge": "",
+          "params": [
+            {
+              "name": "rfp_ids",
+              "type": "list[str]",
+              "default": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "design",
+      "title": "Public design resources",
+      "tools": [
+        {
+          "name": "list_design_resources",
+          "description": "List explicitly allowlisted public design philosophy documents and assets from knowb-ai.github.io.",
+          "badge": "",
+          "params": []
+        },
+        {
+          "name": "search_design_resources",
+          "description": "Search allowlisted public design philosophy documents and assets.",
+          "badge": "",
+          "params": [
+            {
+              "name": "query",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "read_design_resource",
+          "description": "Read an allowlisted public design philosophy document or asset from knowb-ai.github.io.",
+          "badge": "",
+          "params": [
+            {
+              "name": "path",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "repo",
+              "type": "str",
+              "default": "'knowb-ai/knowb-ai.github.io'"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "ideas",
+      "title": "Refine ideas",
+      "tools": [
+        {
+          "name": "fetch_idea_catalogue",
+          "description": "Fetch the canonical Cloud Builder Stack idea catalogue live and return ideation-only suggestions.",
+          "badge": "",
+          "params": [
+            {
+              "name": "query",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "section",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "limit",
+              "type": "Optional[int]",
+              "default": "None"
+            }
+          ]
+        },
+        {
+          "name": "qualify_idea",
+          "description": "Deterministically qualify a candidate idea against the canonical catalogue, open public projects, and showcase.",
+          "badge": "",
+          "params": [
+            {
+              "name": "title",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "summary",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "alignment_evidence",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "human_reviewed_rationale",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "reviewed_by",
+              "type": "Optional[str]",
+              "default": "None"
+            }
+          ]
+        },
+        {
+          "name": "propose_idea_catalogue_addition",
+          "description": "Preview and optionally submit a qualified, human-reviewed idea as a PR to Cloud Builder Stack.",
+          "badge": "Writes with review",
+          "params": [
+            {
+              "name": "title",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "summary",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "alignment_evidence",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "human_reviewed_rationale",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "reviewed_by",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "section",
+              "type": "str",
+              "default": "'10. Stronger Actual AI System Ideas'"
+            },
+            {
+              "name": "submit",
+              "type": "bool",
+              "default": "False"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "requests",
+      "title": "Contributor requests",
+      "tools": [
+        {
+          "name": "preview_contributor_request",
+          "description": "Preview a refinement draft, expression of interest, contribution-access request, or work-elevation request.",
+          "badge": "",
+          "params": [
+            {
+              "name": "request_type",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "rfp_id",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "requested_scope",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "message",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "submit_contributor_request",
+          "description": "Submit a contributor request after verifying caller identity and write permission on BetterHackdays.",
+          "badge": "Verified identity",
+          "params": [
+            {
+              "name": "request_type",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "rfp_id",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "requested_scope",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "message",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "list_contributor_requests",
+          "description": "List private contributor requests for the verified requester or a verified BetterHackdays maintainer/admin.",
+          "badge": "Verified identity",
+          "params": []
+        }
+      ]
+    },
+    {
+      "key": "guards",
+      "title": "Permission guards",
+      "tools": [
+        {
+          "name": "authorize_github_mutation",
+          "description": "Verify authenticated human identity, exact repository permission, and Kenobi scope before any GitHub write.",
+          "badge": "Verified identity",
+          "params": [
+            {
+              "name": "operation",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "target_repo",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "expected_target_repo",
+              "type": "Optional[str]",
+              "default": "None"
+            }
+          ]
+        },
+        {
+          "name": "grant_repository_access",
+          "description": "Separate owner-only, explicitly confirmed repository access grant scoped to an allowlisted repository.",
+          "badge": "Preview only",
+          "params": [
+            {
+              "name": "target_repo",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "grantee_login",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "permission",
+              "type": "str",
+              "default": "'write'"
+            },
+            {
+              "name": "requester_login",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "confirmed",
+              "type": "bool",
+              "default": "False"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "hackday",
+      "title": "Hack Day room",
+      "tools": [
+        {
+          "name": "connect_harness",
+          "description": "Connect a coding harness and create an active participant profile.",
+          "badge": "",
+          "params": [
+            {
+              "name": "harness_id",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "update_profile",
+          "description": "Update profile fields used by matchmaking and planning.",
+          "badge": "",
+          "params": [
+            {
+              "name": "harness_id",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "display_label",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "skills",
+              "type": "Optional[list[str]]",
+              "default": "None"
+            },
+            {
+              "name": "interests",
+              "type": "Optional[list[str]]",
+              "default": "None"
+            },
+            {
+              "name": "preferred_role",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "project_vibe",
+              "type": "Optional[str]",
+              "default": "None"
+            },
+            {
+              "name": "looking_for",
+              "type": "Optional[list[str]]",
+              "default": "None"
+            },
+            {
+              "name": "availability",
+              "type": "Optional[str]",
+              "default": "None"
+            }
+          ]
+        },
+        {
+          "name": "start_survey",
+          "description": "Start or restart the Socratic onboarding survey.",
+          "badge": "",
+          "params": [
+            {
+              "name": "harness_id",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "answer_survey",
+          "description": "Record one onboarding survey answer.",
+          "badge": "",
+          "params": [
+            {
+              "name": "harness_id",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "answer",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "get_survey_state",
+          "description": "Read survey progress without advancing it.",
+          "badge": "",
+          "params": [
+            {
+              "name": "harness_id",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "get_match_cards",
+          "description": "Return anonymized, scored candidate match cards.",
+          "badge": "",
+          "params": [
+            {
+              "name": "harness_id",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "like_profile",
+          "description": "Like a candidate and create a match when the like is mutual.",
+          "badge": "",
+          "params": [
+            {
+              "name": "from_harness_id",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "to_harness_id",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "pass_profile",
+          "description": "Pass on a candidate without creating a match.",
+          "badge": "",
+          "params": [
+            {
+              "name": "from_harness_id",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "to_harness_id",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "get_matches",
+          "description": "Return open matches for a harness.",
+          "badge": "",
+          "params": [
+            {
+              "name": "harness_id",
+              "type": "str",
+              "default": ""
+            }
+          ]
+        },
+        {
+          "name": "ingest_event_text",
+          "description": "Normalize pasted hackathon text into event context.",
+          "badge": "",
+          "params": [
+            {
+              "name": "text",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "source_label",
+              "type": "str",
+              "default": "'Pasted event text'"
+            },
+            {
+              "name": "source_url",
+              "type": "str | None",
+              "default": "None"
+            }
+          ]
+        },
+        {
+          "name": "rank_idea_suggestions",
+          "description": "Rank concise idea suggestions from event and team signals.",
+          "badge": "",
+          "params": [
+            {
+              "name": "event",
+              "type": "Any",
+              "default": ""
+            },
+            {
+              "name": "profile",
+              "type": "Any",
+              "default": "None"
+            },
+            {
+              "name": "team",
+              "type": "Optional[list[Any]]",
+              "default": "None"
+            },
+            {
+              "name": "topics",
+              "type": "Optional[list[str]]",
+              "default": "None"
+            }
+          ]
+        },
+        {
+          "name": "generate_process_timeline",
+          "description": "Generate a deadline-aware Hack Day execution timeline.",
+          "badge": "",
+          "params": [
+            {
+              "name": "event",
+              "type": "Any",
+              "default": ""
+            },
+            {
+              "name": "profile",
+              "type": "Any",
+              "default": "None"
+            },
+            {
+              "name": "team",
+              "type": "Optional[list[Any]]",
+              "default": "None"
+            },
+            {
+              "name": "hack_day",
+              "type": "Any",
+              "default": "None"
+            },
+            {
+              "name": "team_room",
+              "type": "Any",
+              "default": "None"
+            },
+            {
+              "name": "workspace_repo",
+              "type": "Any",
+              "default": "None"
+            }
+          ]
+        },
+        {
+          "name": "generate_prep_checklist",
+          "description": "Generate immediate prep tasks and first-hour focus.",
+          "badge": "",
+          "params": [
+            {
+              "name": "event",
+              "type": "Any",
+              "default": ""
+            },
+            {
+              "name": "profile",
+              "type": "Any",
+              "default": "None"
+            },
+            {
+              "name": "team",
+              "type": "Optional[list[Any]]",
+              "default": "None"
+            },
+            {
+              "name": "hack_day",
+              "type": "Any",
+              "default": "None"
+            },
+            {
+              "name": "team_room",
+              "type": "Any",
+              "default": "None"
+            },
+            {
+              "name": "workspace_repo",
+              "type": "Any",
+              "default": "None"
+            }
+          ]
+        },
+        {
+          "name": "resolve_slug",
+          "description": "Resolve Hack Day codes, standalone slugs, and room keywords.",
+          "badge": "",
+          "params": [
+            {
+              "name": "raw_input",
+              "type": "str",
+              "default": ""
+            },
+            {
+              "name": "hack_days",
+              "type": "list[dict[str, Any]]",
+              "default": ""
+            },
+            {
+              "name": "standalone_slugs",
+              "type": "Optional[list[dict[str, Any]]]",
+              "default": "None"
+            },
+            {
+              "name": "caller_participant_id",
+              "type": "Optional[str]",
+              "default": "None"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "route_count": 28,
+  "route_groups": [
+    {
+      "key": "rfps",
+      "title": "RFPs",
+      "routes": [
+        {
+          "id": "route-get-rfps",
+          "method": "GET",
+          "path": "/rfps",
+          "auth": false
+        },
+        {
+          "id": "route-get-rfps-search",
+          "method": "GET",
+          "path": "/rfps/search",
+          "auth": false
+        },
+        {
+          "id": "route-post-rfps-compare",
+          "method": "POST",
+          "path": "/rfps/compare",
+          "auth": false
+        },
+        {
+          "id": "route-get-rfps-rfp-id",
+          "method": "GET",
+          "path": "/rfps/{rfp_id}",
+          "auth": false
+        }
+      ]
+    },
+    {
+      "key": "design",
+      "title": "Design resources",
+      "routes": [
+        {
+          "id": "route-get-design-resources",
+          "method": "GET",
+          "path": "/design-resources",
+          "auth": false
+        },
+        {
+          "id": "route-get-design-resources-search",
+          "method": "GET",
+          "path": "/design-resources/search",
+          "auth": false
+        },
+        {
+          "id": "route-post-design-resources-read",
+          "method": "POST",
+          "path": "/design-resources/read",
+          "auth": false
+        }
+      ]
+    },
+    {
+      "key": "ideas",
+      "title": "Ideas",
+      "routes": [
+        {
+          "id": "route-get-ideas-catalogue",
+          "method": "GET",
+          "path": "/ideas/catalogue",
+          "auth": false
+        },
+        {
+          "id": "route-post-ideas-qualify",
+          "method": "POST",
+          "path": "/ideas/qualify",
+          "auth": false
+        },
+        {
+          "id": "route-post-ideas-propose",
+          "method": "POST",
+          "path": "/ideas/propose",
+          "auth": true
+        }
+      ]
+    },
+    {
+      "key": "requests",
+      "title": "Contributor requests",
+      "routes": [
+        {
+          "id": "route-post-contributor-requests-preview",
+          "method": "POST",
+          "path": "/contributor/requests/preview",
+          "auth": false
+        },
+        {
+          "id": "route-post-contributor-requests-submit",
+          "method": "POST",
+          "path": "/contributor/requests/submit",
+          "auth": true
+        },
+        {
+          "id": "route-post-contributor-requests-list",
+          "method": "POST",
+          "path": "/contributor/requests/list",
+          "auth": true
+        }
+      ]
+    },
+    {
+      "key": "hackday",
+      "title": "Hack Day room",
+      "routes": [
+        {
+          "id": "route-get-health",
+          "method": "GET",
+          "path": "/health",
+          "auth": false
+        },
+        {
+          "id": "route-post-connect",
+          "method": "POST",
+          "path": "/connect",
+          "auth": false
+        },
+        {
+          "id": "route-post-profile-update",
+          "method": "POST",
+          "path": "/profile/update",
+          "auth": false
+        },
+        {
+          "id": "route-post-event-ingest-text",
+          "method": "POST",
+          "path": "/event/ingest/text",
+          "auth": false
+        },
+        {
+          "id": "route-post-planner-ideas",
+          "method": "POST",
+          "path": "/planner/ideas",
+          "auth": false
+        },
+        {
+          "id": "route-post-planner-timeline",
+          "method": "POST",
+          "path": "/planner/timeline",
+          "auth": false
+        },
+        {
+          "id": "route-post-planner-checklist",
+          "method": "POST",
+          "path": "/planner/checklist",
+          "auth": false
+        },
+        {
+          "id": "route-post-slug-resolve",
+          "method": "POST",
+          "path": "/slug/resolve",
+          "auth": false
+        },
+        {
+          "id": "route-get-matchmaking-cards",
+          "method": "GET",
+          "path": "/matchmaking/cards",
+          "auth": false
+        },
+        {
+          "id": "route-post-matchmaking-like",
+          "method": "POST",
+          "path": "/matchmaking/like",
+          "auth": false
+        },
+        {
+          "id": "route-post-matchmaking-pass",
+          "method": "POST",
+          "path": "/matchmaking/pass",
+          "auth": false
+        },
+        {
+          "id": "route-get-matches",
+          "method": "GET",
+          "path": "/matches",
+          "auth": false
+        },
+        {
+          "id": "route-post-survey-start",
+          "method": "POST",
+          "path": "/survey/start",
+          "auth": false
+        },
+        {
+          "id": "route-post-survey-answer",
+          "method": "POST",
+          "path": "/survey/answer",
+          "auth": false
+        },
+        {
+          "id": "route-get-survey-state",
+          "method": "GET",
+          "path": "/survey/state",
+          "auth": false
+        }
+      ]
+    }
+  ],
+  "rfps": [
+    {
+      "id": "shadowcaster",
+      "title": "ShadowCaster",
+      "tags": [
+        "Platform Visibility",
+        "Moderation Policy",
+        "Event Amplification"
+      ],
+      "summary": "Investigate how LinkedIn and Instagram content policies affect reach, moderation, and event visibility for artists, creators, and community workers, especially in marginalized communities.",
+      "kind": "Website RFP"
+    },
+    {
+      "id": "underminer",
+      "title": "Underminer",
+      "tags": [
+        "Narrative Reconstruction",
+        "Source Traceability",
+        "Context Tracing"
+      ],
+      "summary": "Extract semantic understanding from paywalled reporting and reconstruct the story from alternate sources plus LLM context-tracing experiments.",
+      "kind": "Website RFP"
+    },
+    {
+      "id": "x-poser",
+      "title": "X-Poser",
+      "tags": [
+        "Claim Checking",
+        "Evidence Retrieval",
+        "Smoke Test"
+      ],
+      "summary": "Submit an X link, run claim checks, and generate a report that marks the post as true, uncertain, or fabricated, with export-ready output for sharing on X.",
+      "kind": "Website RFP"
+    },
+    {
+      "id": "precongnition",
+      "title": "Precongnition",
+      "tags": [
+        "Conference Discovery",
+        "Session Continuity",
+        "Learning Graph"
+      ],
+      "summary": "Detect missing or mismatched conference talks, tutorials, or demos, then crawl for alternate watch links and nearest neighboring sessions.",
+      "kind": "Website RFP"
+    },
+    {
+      "id": "marksweep",
+      "title": "MarkSweep",
+      "tags": [
+        "Inbox Triage",
+        "Browser Extension",
+        "User Rules"
+      ],
+      "summary": "A browser extension granted control over your active tab that walks every unread message in your open inbox, checks each against relevance rules you control, marks non-matches as read in bulk, and flags matches to stay pinned at the top.",
+      "kind": "Website RFP"
+    },
+    {
+      "id": "subtracktor",
+      "title": "Subtracktor",
+      "tags": [
+        "Subscription Escape",
+        "Inbox Agents",
+        "Financial Leakage"
+      ],
+      "summary": "Subtracktor is a browser extension that connects consent-fully to your email inbox once it detects an inbox open in the active tab. It scans only for account-creation and subscription-confirmation messages, then builds a per-account record of every subscription it finds.",
+      "kind": "Website RFP"
+    },
+    {
+      "id": "betterhackdays",
+      "title": "BetterHackdays",
+      "tags": [
+        "Shared Hack Day",
+        "Team Formation",
+        "Project Continuity"
+      ],
+      "summary": "Help hack-day organizers move builders from event rules and tracks to a team, a focused idea, and a shared first-hour plan. BetterHackdays brings event context, opt-in participant profiles, matchmaking, and team workspaces into one live flow.",
+      "kind": "Live project"
+    },
+    {
+      "id": "betterlover",
+      "title": "BetterLover",
+      "tags": [
+        "Care Planning",
+        "Cycle-Aware Context",
+        "Consent First"
+      ],
+      "summary": "Turn a person's chosen cycle, mood, energy, and care preferences into thoughtful, practical suggestions for a partner. The current prototype uses synthetic cycle data and produces a structured plan that can be reviewed before action.",
+      "kind": "Live project"
+    },
+    {
+      "id": "sepnu-pues",
+      "title": "Sepnu Pues",
+      "tags": [
+        "Daily Follow-Through",
+        "Opt-In Accountability",
+        "User-Controlled Sharing"
+      ],
+      "summary": "Help people follow through on the tasks they set for themselves through a lightweight daily loop. The prototype pairs a task list with optional safe-cartoon generation, an accountability-email queue, and a prefilled social-post draft.",
+      "kind": "Live project"
+    }
+  ],
+  "request_types": [
+    {
+      "key": "refinement_draft",
+      "label": "RFP Refinement Draft",
+      "purpose": "Suggest sharper scope, outcomes, or safety notes for an existing RFP brief.",
+      "permission": "Read or higher"
+    },
+    {
+      "key": "expression_of_interest",
+      "label": "Expression of Interest",
+      "purpose": "Tell the maintainers you want to work on an RFP, with no access asked for.",
+      "permission": "Read or higher"
+    },
+    {
+      "key": "contribution_access_request",
+      "label": "Project Contribution Access Request",
+      "purpose": "Ask to be considered for contributor access to the project behind an RFP.",
+      "permission": "Read or higher"
+    },
+    {
+      "key": "work_elevation_request",
+      "label": "Work Elevation Request",
+      "purpose": "Ask for elevated work on a project you already contribute to.",
+      "permission": "Write, maintain, or admin"
+    }
+  ]
+}

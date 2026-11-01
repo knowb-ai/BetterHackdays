@@ -1,0 +1,29 @@
+# The BetterHackdays RFP Connector manual, a Zola site served at the
+# GitHub Pages custom domain hack.knowb.run. The brand is knowb.run.
+#
+# Each manual section is a Markdown file in content/, ordered by `weight`
+# and rendered into one page by templates/index.html. Reference tables are
+# rendered from data/reference.json, which scripts/build_site.py generates
+# from the connector's code.
+
+base_url = "https://hack.knowb.run"
+title = "BetterHackdays RFP Connector"
+description = "The manual for the BetterHackdays RFP Connector: explore KnowB project RFPs, refine ideas, and send contributor requests that a human reviews. A request is not a grant."
+
+compile_sass = false
+build_search_index = false
+
+[markdown]
+smart_punctuation = false
+
+[extra]
+repo_url = "https://github.com/knowb-ai/BetterHackdays"
+edit_url = "https://github.com/knowb-ai/BetterHackdays/edit/main/site/content/"
+contact = "ping@knowb.run"
+
+top_nav = [
+    { label = "Quickstart", url = "#quickstart" },
+    { label = "Requests", url = "#requests" },
+    { label = "Reference", url = "#reference" },
+    { label = "GitHub", url = "https://github.com/knowb-ai/BetterHackdays" },
+]

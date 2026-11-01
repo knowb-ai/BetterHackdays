@@ -1,0 +1,16 @@
+{#- Manual sections render into the home page. Each section's own URL,
+    /manual/<slug>/, forwards to its anchor there so deep links keep working. -#}
+{%- set target = get_url(path="/") ~ "#" ~ page.slug -%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ page.title }}: knowb.run</title>
+    <link rel="canonical" href="{{ target }}">
+    <meta name="robots" content="noindex">
+    <meta http-equiv="refresh" content="0; url={{ target }}">
+</head>
+<body>
+    <p><a href="{{ target }}">{{ page.title }}</a></p>
+</body>
+</html>

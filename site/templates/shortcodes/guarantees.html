@@ -1,0 +1,3 @@
+{#- Rules enforced in code. One per line: `title :: text`. -#}
+<dl class="guarantees">{% for line in body | trim | split(pat="
+") %}{% if line | trim %}{% set c = line | trim | split(pat=" :: ") %}<div><dt>{{ c.0 }}</dt><dd>{{ c.1 | markdown(inline=true) | safe }}</dd></div>{% endif %}{% endfor %}</dl>

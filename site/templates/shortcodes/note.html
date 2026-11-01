@@ -1,0 +1,2 @@
+{#- A quiet footnote under a block. Body is inline Markdown. -#}
+<p class="note">{{ body | trim | markdown(inline=true) | safe }}</p>

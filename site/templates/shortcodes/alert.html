@@ -1,0 +1,2 @@
+{#- A highlighted rule. Usage: {% alert(title="A request is not a grant.") %}Markdown{% end %} -#}
+<div class="alert" role="note"><span class="alert-icon" aria-hidden="true">!</span><div><p class="alert-title">{{ title }}</p>{{ body | markdown | safe }}</div></div>

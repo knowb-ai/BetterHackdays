@@ -1,0 +1,4 @@
+{#- CRT cabinet cards. One per line: `tone :: kicker :: text`, tone is saber or ember. -#}
+{%- set cols = cols | default(value=3) -%}
+<div class="grid-{{ cols }}">{% for line in body | trim | split(pat="
+") %}{% if line | trim %}{% set c = line | trim | split(pat=" :: ") %}<div class="cabinet{% if c.0 == "ember" %} cabinet-ember{% endif %} card"><p class="card-k">{{ c.1 }}</p><p>{{ c.2 | markdown(inline=true) | safe }}</p></div>{% endif %}{% endfor %}</div>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Off course: knowb.run{% endblock title %}
+
+{% block content %}
+<main id="top" class="lost">
+    <div class="lost-inner">
+        <p class="kicker"><span class="orbit" aria-hidden="true"></span>Signal lost · 404</p>
+        <h1 class="display">This orbit is empty.</h1>
+        <p class="lead">The page you asked for is not in the manual. Head back to the launch pad, or search for what you need.</p>
+        <div class="cta-row">
+            <a class="tf-btn" href="{{ get_url(path='/') }}">Back to the manual <span class="fins" aria-hidden="true"><i></i><i></i><i></i></span></a>
+            <button class="tf-btn tf-btn-saber" type="button" data-search-open>Search <span class="fins" aria-hidden="true"><i></i><i></i><i></i></span></button>
+        </div>
+    </div>
+</main>
+<aside id="sidebar" hidden></aside>
+{% endblock content %}

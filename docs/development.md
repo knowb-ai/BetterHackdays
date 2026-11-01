@@ -44,6 +44,21 @@ The scenario integration test is:
 .venv/bin/python -m unittest tests/test_hackday_scenario_integration.py
 ```
 
+## Docs Site
+
+The connector manual in `site/` is a static page published to
+https://hack.knowb.run by GitHub Pages. Its MCP tool, REST route, public RFP,
+and request type references are generated from the code:
+
+```bash
+.venv/bin/python scripts/build_site.py          # refresh site/index.html
+.venv/bin/python scripts/build_site.py --check  # fail if it is stale
+python3 -m http.server -d site 8080             # preview at localhost:8080
+```
+
+`tests/test_docs_site.py` runs the same check in the suite. Deployment and
+custom domain setup are documented on the page under "Deploying this site".
+
 ## OKF Contract
 
 The repo enforces OKF metadata for:

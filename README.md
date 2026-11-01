@@ -10,6 +10,10 @@ This README is written for us as product builders. It describes the intended
 experience and the current operating loop. Development setup lives in
 [Development](./docs/development.md).
 
+New here to explore KnowB RFPs or ask to contribute? Start with the
+connector manual at [hack.knowb.run](https://hack.knowb.run). A contributor
+request is reviewed by a person and never grants repository access on its own.
+
 ## The Hack Day Scenario
 
 Imagine the organizer is preparing Agent Sprint Hackathon in Berlin.
@@ -316,3 +320,4 @@ is production-ready.
 - [Hackathon Playbook](./docs/hackathon-playbook.md)
 - [MCP Server](./docs/mcp-server.md)
 - [Development](./docs/development.md)
+- [Connector manual](https://hack.knowb.run), published from `site/`

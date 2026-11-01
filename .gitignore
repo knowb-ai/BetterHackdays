@@ -24,3 +24,6 @@ env/
 .DS_Store
 .idea/
 .vscode/
+
+# Zola build output
+site/public/

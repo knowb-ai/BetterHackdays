@@ -356,8 +356,15 @@ kbd {
 }
 .doc h2:hover .heading-anchor, .doc h3:hover .heading-anchor, .heading-anchor:focus { opacity: 1; }
 .note { font-size: 0.88rem; color: var(--ivory-3) !important; }
+.doc-edit { display: inline-block; margin-top: 1.6rem; font-size: 0.78rem; color: var(--ivory-3); }
+.doc-edit:hover { color: var(--saber); }
 
-.ticks { padding: 0; list-style: none; }
+/* --- 404 --- */
+.lost { min-height: calc(100vh - var(--topbar-h) - 200px); display: grid; place-items: center; padding: 64px 24px; }
+.lost-inner { max-width: 640px; }
+button.tf-btn { border: 0; background: none; cursor: pointer; }
+
+.ticks ul, .prompts ul { padding: 0; margin: 0.6rem 0; list-style: none; }
 .ticks li { position: relative; padding-left: 1.6rem; margin: 0.5rem 0; }
 .ticks li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 8px; height: 8px; background: var(--saber); }
 
@@ -375,7 +382,11 @@ kbd {
     padding: 1.1rem 1.2rem; background: var(--surface);
     border: 1px solid rgba(233,194,179,0.12); border-radius: 16px 0 16px 0;
 }
-.mini > code { font-size: 0.9rem; color: var(--saber); }
+.mini-h {
+    display: block; font: 600 0.7rem var(--display); letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--ember);
+}
+.mini-h code { font-size: 0.9rem; letter-spacing: 0; text-transform: none; color: var(--saber); }
 .mini p { margin: 0.4rem 0 0; font-size: 0.92rem; }
 
 /* --- Steps --- */
@@ -394,7 +405,7 @@ kbd {
 }
 .steps h3 { margin-top: 0 !important; }
 .steps-tight > li { padding-bottom: 1.2rem; }
-.prompts { padding: 0; list-style: none; display: grid; gap: 8px; }
+.prompts ul { display: grid; gap: 8px; }
 .prompts li {
     padding: 0.6rem 0.9rem; background: var(--surface); border-left: 2px solid var(--ember);
     font-size: 0.93rem; color: var(--ivory) !important;
@@ -402,13 +413,13 @@ kbd {
 
 /* --- Code --- */
 pre { margin: 1rem 0; }
-.code {
+.doc pre:not(.sig) {
     position: relative; overflow-x: auto;
     padding: 1.1rem 1.2rem; background: var(--screen);
     border: 1px solid rgba(134,232,255,0.18); border-radius: 14px 0 14px 0;
     font-size: 0.82rem; line-height: 1.6;
 }
-.code code { color: var(--ivory); font-size: inherit; overflow-wrap: normal; white-space: pre; }
+.doc pre:not(.sig) code { color: var(--ivory); font-size: inherit; overflow-wrap: normal; white-space: pre; }
 .copy {
     position: absolute; top: 8px; right: 8px;
     padding: 4px 10px; background: var(--raised); color: var(--saber);
@@ -556,6 +567,14 @@ pre { margin: 1rem 0; }
     font: 600 0.62rem var(--display); letter-spacing: 0.12em; text-transform: uppercase; vertical-align: middle;
 }
 .table-wrap { overflow-x: auto; margin: 1rem 0; }
+/* Markdown tables: the same look, scrolling on their own at phone width. */
+.doc table:not(.ref-table) { display: block; overflow-x: auto; margin: 1rem 0; border-collapse: collapse; font-size: 0.9rem; }
+.doc table:not(.ref-table) th {
+    text-align: left; padding: 0.6rem 0.8rem; background: var(--marquee);
+    font: 600 0.66rem var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ivory-3);
+}
+.doc table:not(.ref-table) td { padding: 0.65rem 0.8rem; border-top: 1px solid rgba(233,194,179,0.08); color: var(--ivory-2); vertical-align: top; }
+.doc table:not(.ref-table) td code { color: var(--terracotta); white-space: nowrap; overflow-wrap: normal; }
 .ref-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .ref-table th {
     text-align: left; padding: 0.6rem 0.8rem; background: var(--marquee);
@@ -666,3 +685,5 @@ pre { margin: 1rem 0; }
     *, *::before, *::after { animation: none !important; transition: none !important; }
     html { scroll-behavior: auto; }
 }
+
+.index-toggle[hidden] { display: none !important; }

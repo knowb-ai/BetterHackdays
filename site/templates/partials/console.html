@@ -1,0 +1,18 @@
+<figure class="console cabinet" aria-label="Example connector session">
+    <div class="console-bar">
+        <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>transmission · betterhackdays-hack-day</span>
+    </div>
+    <ol class="console-log" data-console>
+        <li class="you"><span class="who">you</span><span class="say">Which RFPs could I join this weekend?</span></li>
+        <li class="call"><span class="who">mcp</span><span class="say">list_project_rfps()</span></li>
+        <li class="out"><span class="who"></span><span class="say"><b>ShadowCaster</b> · Underminer · X-Poser · Precongnition · MarkSweep · Subtracktor</span></li>
+        <li class="out"><span class="who"></span><span class="say">Live projects: <b>BetterHackdays</b> · BetterLover · Sepnu Pues</span></li>
+        <li class="you"><span class="who">you</span><span class="say">Ask to contribute to BetterHackdays.</span></li>
+        <li class="call"><span class="who">mcp</span><span class="say">preview_contributor_request("contribution_access_request", "betterhackdays", ...)</span></li>
+        <li class="out ok"><span class="who"></span><span class="say">status: preview_ready · grants_repository_access: <b>false</b></span></li>
+        <li class="call"><span class="who">mcp</span><span class="say">submit_contributor_request(...)</span></li>
+        <li class="out ok"><span class="who"></span><span class="say">Routed to a maintainer. Access only follows their explicit approval.</span></li>
+    </ol>
+    <figcaption class="sr-only">An agent lists public RFPs, previews a contribution access request, and submits it for human review. The response confirms the request grants no repository access.</figcaption>
+</figure>

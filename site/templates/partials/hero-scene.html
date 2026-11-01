@@ -1,0 +1,48 @@
+<svg class="hero-scene" viewBox="0 0 1440 640" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+    <defs>
+        <linearGradient id="g-saber" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stop-color="#86E8FF" stop-opacity="0.05"/>
+            <stop offset="0.45" stop-color="#86E8FF"/>
+            <stop offset="1" stop-color="#FF4A1A" stop-opacity="0.6"/>
+        </linearGradient>
+        <radialGradient id="g-planet" cx="0.5" cy="0" r="0.9">
+            <stop offset="0" stop-color="#2A1D1B"/>
+            <stop offset="0.6" stop-color="#1D1514"/>
+            <stop offset="1" stop-color="#161211"/>
+        </radialGradient>
+        <radialGradient id="g-sun" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#F59A52" stop-opacity="0.55"/>
+            <stop offset="1" stop-color="#F59A52" stop-opacity="0"/>
+        </radialGradient>
+    </defs>
+    <g class="stars" fill="#FCF6F3">
+        <circle cx="96" cy="88" r="1.2"/><circle cx="212" cy="190" r="0.8"/><circle cx="318" cy="64" r="1"/>
+        <circle cx="452" cy="142" r="0.7"/><circle cx="604" cy="48" r="1.3"/><circle cx="731" cy="170" r="0.8"/>
+        <circle cx="866" cy="92" r="1"/><circle cx="1002" cy="36" r="0.7"/><circle cx="1121" cy="150" r="1.2"/>
+        <circle cx="1263" cy="74" r="0.9"/><circle cx="1380" cy="206" r="1"/><circle cx="1330" cy="320" r="0.7"/>
+        <circle cx="54" cy="300" r="0.8"/><circle cx="160" cy="390" r="1"/><circle cx="1210" cy="270" r="0.8"/>
+    </g>
+    <circle class="sun" cx="1130" cy="190" r="150" fill="url(#g-sun)"/>
+    <circle cx="1130" cy="190" r="34" fill="#F59A52" opacity="0.9"/>
+    <g class="orbits" fill="none" stroke-width="1">
+        <ellipse cx="1130" cy="190" rx="250" ry="70" stroke="#86E8FF" stroke-opacity="0.35" transform="rotate(-14 1130 190)"/>
+        <ellipse cx="1130" cy="190" rx="360" ry="110" stroke="#F59A52" stroke-opacity="0.22" transform="rotate(-14 1130 190)"/>
+    </g>
+    <g class="satellite" transform="translate(880 228) rotate(-14)">
+        <rect x="-26" y="-3" width="18" height="6" fill="#86E8FF" opacity="0.7"/>
+        <rect x="8" y="-3" width="18" height="6" fill="#86E8FF" opacity="0.7"/>
+        <path d="M-8 -7 h12 l4 4 v10 h-12 l-4 -4z" fill="#FCF6F3"/>
+    </g>
+    <ellipse cx="720" cy="1250" rx="1300" ry="720" fill="url(#g-planet)"/>
+    <ellipse cx="720" cy="1250" rx="1300" ry="720" fill="none" stroke="url(#g-saber)" stroke-width="2"/>
+    <g class="pad" transform="translate(220 520)">
+        <path d="M0 40 L30 0 L60 40" fill="none" stroke="#86E8FF" stroke-opacity="0.5" stroke-width="2"/>
+        <rect x="-20" y="40" width="100" height="6" fill="#3B1E1D"/>
+        <g class="rocket">
+            <path d="M30 -70 C42 -54 44 -30 40 -6 H20 C16 -30 18 -54 30 -70Z" fill="#FCF6F3"/>
+            <path d="M20 -18 L8 2 L20 -4Z M40 -18 L52 2 L40 -4Z" fill="#FF4A1A"/>
+            <circle cx="30" cy="-40" r="5" fill="#120E0D" stroke="#86E8FF" stroke-width="1.5"/>
+            <path class="flame" d="M24 -4 L30 18 L36 -4Z" fill="#F59A52"/>
+        </g>
+    </g>
+</svg>

@@ -55,7 +55,7 @@
     });
 
     // --- Copy buttons ---
-    document.querySelectorAll('pre.code').forEach(function (pre) {
+    document.querySelectorAll('.doc pre:not(.sig)').forEach(function (pre) {
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'copy';
@@ -122,6 +122,7 @@
     // --- Mobile index drawer ---
     var sidebar = document.getElementById('sidebar');
     var toggleBtn = document.querySelector('.index-toggle');
+    if (!sidebar || sidebar.hidden) toggleBtn.hidden = true;
     function setDrawer(open) {
         sidebar.classList.toggle('is-open', open);
         toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');

@@ -1,0 +1,2 @@
+{#- One question. Wrap questions in <div class="faq">. Usage: {% faq(q="...") %}Markdown{% end %} -#}
+<details><summary>{{ q | markdown(inline=true) | safe }}</summary>{{ body | markdown | safe }}</details>

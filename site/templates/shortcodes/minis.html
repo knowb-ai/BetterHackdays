@@ -1,0 +1,3 @@
+{#- Small reference tiles. One per line: `heading :: text`, both inline Markdown. -#}
+<div class="grid-2">{% for line in body | trim | split(pat="
+") %}{% if line | trim %}{% set c = line | trim | split(pat=" :: ") %}<div class="mini"><span class="mini-h">{{ c.0 | markdown(inline=true) | safe }}</span><p>{{ c.1 | markdown(inline=true) | safe }}</p></div>{% endif %}{% endfor %}</div>

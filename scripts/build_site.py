@@ -1,34 +1,33 @@
-"""Render the generated reference blocks of the hack.knowb.run docs site.
+"""Generate the reference data for the hack.knowb.run docs site.
 
-The page at site/index.html is written by hand, except for the blocks between
-``<!-- BEGIN GENERATED:name -->`` and ``<!-- END GENERATED:name -->`` markers.
-Those blocks are rendered here from the code that actually serves the
-connector, so the manual cannot drift from the tools it documents:
+The manual in site/ is a Zola site. Its sections are Markdown files in
+site/content/, and its reference tables are rendered by shortcodes from
+site/data/reference.json. This script writes that file from the code that
+actually serves the connector, so the manual cannot drift from it:
 
 - ``rfps``: approved public RFPs and live public projects (connector-only
   entries never appear).
-- ``requests``: the contributor request types the connector accepts.
-- ``tools``: every MCP tool registered by ``app.mcp_server``.
-- ``rest``: every REST route served by ``app.main``.
+- ``request_types``: the contributor request types the connector accepts.
+- ``tool_groups``: every MCP tool registered by ``app.mcp_server``.
+- ``route_groups``: every REST route served by ``app.main``.
 
 Usage::
 
-    python scripts/build_site.py          # rewrite site/index.html in place
-    python scripts/build_site.py --check  # exit 1 if the page is stale
+    python scripts/build_site.py          # rewrite site/data/reference.json
+    python scripts/build_site.py --check  # exit 1 if it is stale
 """
 from __future__ import annotations
 
 import argparse
-import html
 import inspect
+import json
 import re
 import sys
 from pathlib import Path
 from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parents[1]
-SITE_INDEX = ROOT / "site" / "index.html"
-REPO_URL = "https://github.com/knowb-ai/BetterHackdays"
+REFERENCE_JSON = ROOT / "site" / "data" / "reference.json"
 
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -144,15 +143,6 @@ REST_GROUPS: list[tuple[str, str, tuple[str, ...]]] = [
 
 HIDDEN_PARAMS = {"auth_context"}
 
-MARKER_RE = re.compile(
-    r"(<!-- BEGIN GENERATED:(?P<name>[a-z]+) -->\n)(?P<body>.*?)(\s*<!-- END GENERATED:(?P=name) -->)",
-    re.DOTALL,
-)
-
-
-def esc(value: Any) -> str:
-    return html.escape(str(value), quote=True)
-
 
 def _annotation(param: inspect.Parameter) -> str:
     ann = param.annotation
@@ -163,61 +153,49 @@ def _annotation(param: inspect.Parameter) -> str:
     return getattr(ann, "__name__", str(ann))
 
 
-def format_signature(name: str, func: Callable[..., Any]) -> str:
-    parts = []
+def tool_params(func: Callable[..., Any]) -> list[dict[str, str]]:
+    params = []
     for param in inspect.signature(func).parameters.values():
         if param.name in HIDDEN_PARAMS or param.kind is inspect.Parameter.VAR_KEYWORD:
             continue
-        piece = f'<span class="sig-p">{esc(param.name)}</span>'
-        ann = _annotation(param)
-        if ann:
-            piece += f': <span class="sig-t">{esc(ann)}</span>'
-        if param.default is not inspect.Parameter.empty:
-            piece += f' = <span class="sig-d">{esc(repr(param.default))}</span>'
-        parts.append(piece)
-    return f'<span class="sig-n">{esc(name)}</span>({", ".join(parts)})'
+        default = "" if param.default is inspect.Parameter.empty else repr(param.default)
+        params.append({"name": param.name, "type": _annotation(param), "default": default})
+    return params
 
 
 def grouped_tools() -> list[tuple[str, str, list[str]]]:
     from app import mcp_tools
 
-    registered = list(mcp_tools.MCP_TOOLS)
     placed = {name for _, _, names in TOOL_GROUPS for name in names}
     groups = [
         (key, title, [n for n in names if n in mcp_tools.MCP_TOOLS])
         for key, title, names in TOOL_GROUPS
     ]
-    unsorted = [n for n in registered if n not in placed]
+    unsorted = [n for n in mcp_tools.MCP_TOOLS if n not in placed]
     if unsorted:
         groups.append(("unsorted", "Unsorted", unsorted))
     return groups
 
 
-def render_tools() -> str:
+def tool_groups() -> list[dict[str, Any]]:
     from app import mcp_server, mcp_tools
 
-    lines = [
-        f'<p class="ref-count"><strong>{len(mcp_tools.MCP_TOOLS)}</strong> tools registered by '
-        f'<code>{esc(mcp_server.SERVER_NAME)}</code>.</p>'
+    return [
+        {
+            "key": key,
+            "title": title,
+            "tools": [
+                {
+                    "name": name,
+                    "description": mcp_server.TOOL_DESCRIPTIONS.get(name, name.replace("_", " ")),
+                    "badge": WRITE_TOOLS.get(name, ""),
+                    "params": tool_params(mcp_tools.MCP_TOOLS[name]),
+                }
+                for name in names
+            ],
+        }
+        for key, title, names in grouped_tools()
     ]
-    for key, title, names in grouped_tools():
-        lines.append(f'<h4 class="ref-group" id="tools-{key}">{esc(title)}</h4>')
-        lines.append('<div class="ref-list">')
-        for name in names:
-            func = mcp_tools.MCP_TOOLS[name]
-            desc = mcp_server.TOOL_DESCRIPTIONS.get(name, name.replace("_", " "))
-            badge = WRITE_TOOLS.get(name)
-            badge_html = f' <span class="badge">{esc(badge)}</span>' if badge else ""
-            lines.append(
-                f'<article class="ref-item" id="tool-{esc(name)}" data-search="{esc(name)} {esc(desc)}">'
-                f'<h5><a class="anchor" href="#tool-{esc(name)}" aria-label="Link to {esc(name)}">#</a>'
-                f"<code>{esc(name)}</code>{badge_html}</h5>"
-                f"<p>{esc(desc)}</p>"
-                f'<pre class="sig"><code>{format_signature(name, func)}</code></pre>'
-                "</article>"
-            )
-        lines.append("</div>")
-    return "\n".join(lines)
 
 
 def _route_auth(route: Any) -> bool:
@@ -228,48 +206,39 @@ def _route_auth(route: Any) -> bool:
     return False
 
 
-def render_rest() -> str:
+def api_routes() -> list[Any]:
     from fastapi.routing import APIRoute
 
     from app.main import app
 
-    routes = [r for r in app.routes if isinstance(r, APIRoute)]
-    rows: dict[str, list[str]] = {key: [] for _, key, _ in REST_GROUPS}
+    return [r for r in app.routes if isinstance(r, APIRoute)]
+
+
+def route_groups() -> list[dict[str, Any]]:
+    rows: dict[str, list[dict[str, Any]]] = {key: [] for _, key, _ in REST_GROUPS}
     rows["other"] = []
-    for route in routes:
+    for route in api_routes():
         key = "other"
         for _, group_key, prefixes in REST_GROUPS:
             if any(route.path == p or route.path.startswith(p + "/") for p in prefixes):
                 key = group_key
                 break
+        slug = re.sub(r"[^a-z0-9]+", "-", route.path.lower()).strip("-") or "root"
         for method in sorted(route.methods - {"HEAD", "OPTIONS"}):
-            auth = (
-                '<span class="badge">Bearer token</span>' if _route_auth(route) else ""
-            )
-            slug = re.sub(r"[^a-z0-9]+", "-", route.path.lower()).strip("-") or "root"
             rows[key].append(
-                f'<tr id="route-{esc(method.lower())}-{esc(slug)}" data-search="{esc(method)} {esc(route.path)}">'
-                f'<td><span class="verb verb-{esc(method.lower())}">{esc(method)}</span></td>'
-                f"<td><code>{esc(route.path)}</code></td>"
-                f"<td>{auth}</td></tr>"
+                {
+                    "id": f"route-{method.lower()}-{slug}",
+                    "method": method,
+                    "path": route.path,
+                    "auth": _route_auth(route),
+                }
             )
-    lines = [
-        f'<p class="ref-count"><strong>{len(routes)}</strong> routes served by '
-        "<code>app.main:app</code>. Interactive docs run at <code>/docs</code> on any local server.</p>"
-    ]
     groups = list(REST_GROUPS) + [("Other", "other", ())]
-    for title, key, _ in groups:
-        if not rows[key]:
-            continue
-        lines.append(f'<h4 class="ref-group" id="rest-{key}">{esc(title)}</h4>')
-        lines.append(
-            '<div class="table-wrap"><table class="ref-table"><thead><tr>'
-            '<th scope="col">Method</th><th scope="col">Path</th><th scope="col">Auth</th>'
-            "</tr></thead><tbody>"
-        )
-        lines.extend(rows[key])
-        lines.append("</tbody></table></div>")
-    return "\n".join(lines)
+    return [
+        {"key": key, "title": title, "routes": rows[key]}
+        for title, key, _ in groups
+        if rows[key]
+    ]
 
 
 def public_rfps() -> list[dict[str, Any]]:
@@ -290,87 +259,53 @@ def public_rfps() -> list[dict[str, Any]]:
     return entries
 
 
-def render_rfps() -> str:
-    lines = ['<ol class="board" aria-label="Approved public RFPs">']
-    for i, rfp in enumerate(public_rfps(), start=1):
-        live = rfp["kind"] == "Live project"
-        tags = "".join(f"<li>{esc(t)}</li>" for t in rfp["tags"][:3])
-        lines.append(
-            f'<li class="board-row{" is-live" if live else ""}" id="rfp-{esc(rfp["id"])}" data-search="{esc(rfp["title"])} {esc(" ".join(rfp["tags"]))}">'
-            f'<span class="board-no">{i:02d}</span>'
-            f'<span class="board-title">{esc(rfp["title"])}</span>'
-            f'<code class="board-id">{esc(rfp["id"])}</code>'
-            f'<span class="board-kind"><span class="led" aria-hidden="true"></span>{esc(rfp["kind"])}</span>'
-            f'<ul class="board-tags">{tags}</ul>'
-            f'<p class="board-summary">{esc(rfp["summary"])}</p>'
-            "</li>"
-        )
-    lines.append("</ol>")
-    return "\n".join(lines)
-
-
-def render_requests() -> str:
+def request_types() -> list[dict[str, str]]:
     from app import rfp_connector
 
-    lines = [
-        '<div class="table-wrap"><table class="ref-table req-table"><thead><tr>'
-        '<th scope="col">Request type</th><th scope="col">Use it to</th>'
-        '<th scope="col">Requester needs on BetterHackdays</th></tr></thead><tbody>'
-    ]
+    rows = []
     for key, label in rfp_connector.ALLOWED_CONTRIBUTOR_REQUEST_TYPES.items():
         purpose, permission = REQUEST_TYPE_DETAILS.get(key, ("Undocumented.", "Undocumented"))
-        lines.append(
-            f'<tr id="request-{esc(key)}" data-search="{esc(label)} {esc(key)}">'
-            f"<td><strong>{esc(label)}</strong><br><code>{esc(key)}</code></td>"
-            f"<td>{esc(purpose)}</td><td>{esc(permission)}</td></tr>"
-        )
-    lines.append("</tbody></table></div>")
-    return "\n".join(lines)
+        rows.append({"key": key, "label": label, "purpose": purpose, "permission": permission})
+    return rows
 
 
-RENDERERS: dict[str, Callable[[], str]] = {
-    "rfps": render_rfps,
-    "requests": render_requests,
-    "tools": render_tools,
-    "rest": render_rest,
-}
+def build_reference() -> dict[str, Any]:
+    from app import mcp_server, mcp_tools
+
+    return {
+        "server": mcp_server.SERVER_NAME,
+        "tool_count": len(mcp_tools.MCP_TOOLS),
+        "tool_groups": tool_groups(),
+        "route_count": len(api_routes()),
+        "route_groups": route_groups(),
+        "rfps": public_rfps(),
+        "request_types": request_types(),
+    }
 
 
-def render_page(source: str) -> str:
-    seen: set[str] = set()
-
-    def replace(match: re.Match[str]) -> str:
-        name = match.group("name")
-        if name not in RENDERERS:
-            raise KeyError(f"Unknown generated block: {name}")
-        seen.add(name)
-        return match.group(1) + RENDERERS[name]() + match.group(4)
-
-    rendered = MARKER_RE.sub(replace, source)
-    missing = set(RENDERERS) - seen
-    if missing:
-        raise KeyError(f"site/index.html is missing generated blocks: {sorted(missing)}")
-    return rendered
+def render_reference() -> str:
+    return json.dumps(build_reference(), indent=2, ensure_ascii=False) + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--check", action="store_true", help="fail if site/index.html is stale")
+    parser.add_argument("--check", action="store_true", help="fail if the reference is stale")
     args = parser.parse_args(argv)
 
-    source = SITE_INDEX.read_text(encoding="utf-8")
-    rendered = render_page(source)
+    rendered = render_reference()
+    current = REFERENCE_JSON.read_text(encoding="utf-8") if REFERENCE_JSON.exists() else ""
     if args.check:
-        if rendered != source:
-            print("site/index.html is stale. Run: python scripts/build_site.py", file=sys.stderr)
+        if rendered != current:
+            print("site/data/reference.json is stale. Run: python scripts/build_site.py", file=sys.stderr)
             return 1
-        print("site/index.html is up to date.")
+        print("site/data/reference.json is up to date.")
         return 0
-    if rendered != source:
-        SITE_INDEX.write_text(rendered, encoding="utf-8")
-        print("Rewrote site/index.html.")
+    if rendered != current:
+        REFERENCE_JSON.parent.mkdir(parents=True, exist_ok=True)
+        REFERENCE_JSON.write_text(rendered, encoding="utf-8")
+        print("Wrote site/data/reference.json.")
     else:
-        print("site/index.html already up to date.")
+        print("site/data/reference.json already up to date.")
     return 0
 
 

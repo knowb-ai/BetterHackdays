@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+{% block description %}{{ section.description | default(value=config.description) }}{% endblock description %}
+
+{% block content %}
+{%- set hero = section.extra.hero -%}
+{%- set manual = get_section(path="manual/_index.md") -%}
+<main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+        {% include "partials/hero-scene.html" %}
+
+        <div class="hero-inner">
+            <div class="hero-copy">
+                <p class="kicker"><span class="orbit" aria-hidden="true"></span>{{ hero.kicker }}</p>
+                <h1 id="hero-title" class="display">
+                    {%- for line in hero.headline %}{{ line }}<br>{% endfor -%}
+                    <span class="hl">{{ hero.highlight }}</span>
+                </h1>
+                <p class="lead">{{ hero.lead }}</p>
+                <div class="cta-row">
+                    {%- for cta in hero.ctas %}
+                    <a class="tf-btn{% if cta.tone %} tf-btn-{{ cta.tone }}{% endif %}" href="{{ cta.url }}">{{ cta.label }} {{ macros::fins() }}</a>
+                    {%- endfor %}
+                </div>
+                <ul class="hero-chips" aria-label="At a glance">
+                    {%- for chip in hero.chips %}
+                    <li class="chip{% if chip.tone %} chip-{{ chip.tone }}{% endif %}"><span class="led" aria-hidden="true"></span>{{ chip.label }}</li>
+                    {%- endfor %}
+                </ul>
+            </div>
+            {% include "partials/console.html" %}
+        </div>
+
+        <ol class="flightplan" aria-label="How the connector works">
+            {%- for step in section.extra.flightplan %}
+            <li{% if loop.last %} class="fp-gate"{% endif %}><span class="fp-no">{{ macros::pad(n=loop.index) }}</span><span class="fp-t">{{ step.title }}</span><span class="fp-d">{{ step.text }}</span></li>
+            {%- endfor %}
+        </ol>
+    </section>
+
+    <div class="manual" id="manual">
+        <aside class="sidebar" id="sidebar" aria-label="Manual index">
+            <p class="sidebar-label">Manual index</p>
+            <nav aria-label="Sections">
+                <ol class="toc">
+                    {%- for page in manual.pages %}
+                    <li><a href="#{{ page.slug }}"><span>{{ macros::pad(n=loop.index) }}</span>{{ page.extra.nav | default(value=page.title) }}</a>
+                        {%- if page.extra.toc and page.toc %}
+                        <ol>
+                            {%- for h in page.toc %}
+                            <li><a href="#{{ h.id }}">{{ h.title }}</a></li>
+                            {%- endfor %}
+                        </ol>
+                        {%- endif %}
+                    </li>
+                    {%- endfor %}
+                </ol>
+            </nav>
+            <a class="sidebar-edit" href="{{ config.extra.repo_url }}/tree/main/site/content" rel="noopener">Edit this manual on GitHub</a>
+        </aside>
+
+        <article class="content">
+            {%- for page in manual.pages %}
+            <section class="doc" id="{{ page.slug }}" aria-labelledby="h-{{ page.slug }}">
+                <p class="doc-no">{{ macros::pad(n=loop.index) }}</p>
+                <h2 id="h-{{ page.slug }}">{{ page.title }}</h2>
+                <div class="rule"></div>
+                {{ page.content | safe }}
+                <a class="doc-edit" href="{{ config.extra.edit_url }}{{ page.relative_path }}" rel="noopener">Edit this section</a>
+            </section>
+            {%- endfor %}
+        </article>
+    </div>
+</main>
+{% endblock content %}

@@ -1,0 +1,2 @@
+{#- One numbered step. Wrap steps in <ol class="steps">. Usage: {% step(title="...", id="...") %}Markdown{% end %} -#}
+<li><h3{% if id %} id="{{ id }}"{% endif %}>{{ title }}</h3>{{ body | markdown | safe }}</li>

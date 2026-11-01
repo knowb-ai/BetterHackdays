@@ -1,0 +1,3 @@
+{#- Stages in order. One per line: `stage :: code :: text`. -#}
+<ol class="pipeline">{% for line in body | trim | split(pat="
+") %}{% if line | trim %}{% set c = line | trim | split(pat=" :: ") %}<li><span class="pl-k">{{ c.0 }}</span><code>{{ c.1 }}</code><p>{{ c.2 | markdown(inline=true) | safe }}</p></li>{% endif %}{% endfor %}</ol>

@@ -1,0 +1,4 @@
+{#- A numbered path whose last stop is the human gate. One stop per line, inline Markdown. -#}
+{%- set stops = [] -%}{%- for line in body | trim | split(pat="
+") %}{% if line | trim %}{% set_global stops = stops | concat(with=line | trim) %}{% endif %}{% endfor -%}
+<ol class="route">{% for stop in stops %}<li{% if loop.last %} class="route-gate"{% endif %}><span class="route-no">{{ loop.index }}</span><div>{{ stop | markdown(inline=true) | safe }}</div></li>{% endfor %}</ol>

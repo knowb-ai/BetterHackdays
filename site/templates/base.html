@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ config.title }}: knowb.run{% endblock title %}</title>
+    <meta name="description" content="{% block description %}{{ config.description }}{% endblock description %}">
+    <meta name="theme-color" content="#161211">
+    <link rel="canonical" href="{{ current_url | default(value=config.base_url) }}">
+    <meta property="og:site_name" content="knowb.run">
+    <meta property="og:title" content="{{ config.title }}">
+    <meta property="og:description" content="Pick a mission. Ask to board. A human says yes. The manual for exploring KnowB RFPs and sending contributor requests.">
+    <meta property="og:url" content="{{ current_url | default(value=config.base_url) }}">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/svg+xml" href="{{ get_url(path='favicon.svg') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ get_url(path='assets/hack.css', cachebust=true) }}">
+    <script defer src="{{ get_url(path='assets/hack.js', cachebust=true) }}"></script>
+</head>
+<body>
+<a class="skip" href="#manual">Skip to the manual</a>
+<div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+
+<header class="topbar">
+    <div class="topbar-inner">
+        <div class="brand">
+            <a class="wordmark" href="https://knowb.run/" aria-label="knowb.run home">knowb<span class="dot">.</span>run</a>
+            <a class="product" href="{{ get_url(path='/') }}#top">BetterHackdays</a>
+        </div>
+        <nav class="topnav" aria-label="Primary">
+            {%- for item in config.extra.top_nav %}
+            <a href="{% if item.url is starting_with('#') %}{{ get_url(path='/') }}{% endif %}{{ item.url }}"{% if item.url is starting_with('http') %} rel="noopener"{% endif %}>{{ item.label }}</a>
+            {%- endfor %}
+        </nav>
+        <button class="search-trigger" type="button" data-search-open aria-haspopup="dialog">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 2a5 5 0 1 0 3.1 8.9l3 3 1.4-1.4-3-3A5 5 0 0 0 7 2Zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></svg>
+            <span>Search the manual</span>
+            <kbd>/</kbd>
+        </button>
+        <button class="index-toggle" type="button" aria-controls="sidebar" aria-expanded="false">Index</button>
+    </div>
+</header>
+
+{% block content %}{% endblock content %}
+
+<footer class="footer">
+    <div class="footer-inner">
+        <div>
+            <a class="wordmark" href="https://knowb.run/">knowb<span class="dot">.</span>run</a>
+            <p>BetterHackdays is a KnowB AI Systems project. This manual is built with Zola, and its reference is generated from the connector's own code.</p>
+        </div>
+        <ul class="footer-links">
+            <li><a href="https://knowb.run/">knowb.run</a></li>
+            <li><a href="{{ config.extra.repo_url }}" rel="noopener">Source</a></li>
+            <li><a href="{{ config.extra.repo_url }}/issues" rel="noopener">Issues</a></li>
+            <li><a href="mailto:{{ config.extra.contact }}">{{ config.extra.contact }}</a></li>
+        </ul>
+    </div>
+</footer>
+
+<div class="palette" id="palette" role="dialog" aria-modal="true" aria-label="Search the manual" hidden>
+    <div class="palette-box cabinet">
+        <label class="sr-only" for="palette-input">Search the manual</label>
+        <input id="palette-input" type="search" placeholder="Search tools, routes, RFPs, sections" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="palette-results" aria-autocomplete="list">
+        <ul id="palette-results" class="palette-results" role="listbox" aria-label="Results"></ul>
+        <p class="palette-hint"><kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</p>
+    </div>
+</div>
+</body>
+</html>

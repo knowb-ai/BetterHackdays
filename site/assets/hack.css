@@ -1,4 +1,4 @@
-/* hack.knowb.run: the BetterHackdays RFP Connector manual.
+/* knowb.run: the BetterHackdays RFP Connector manual, served at hack.knowb.run.
    A self-contained port of the knowb.run design system:
    - Editorial layer (space-age minimalism): ground, type, saber lines, horizon.
    - Arcade layer (tailfin): buttons, chips, cabinets, alerts, all behind the CRT pass. */
@@ -85,11 +85,19 @@ strong { color: var(--ivory); font-weight: 600; }
     max-width: 1320px; height: 100%; margin: 0 auto; padding: 0 24px;
     display: flex; align-items: center; gap: 28px;
 }
+/* Brand: the knowb.run wordmark, then the product it hosts. */
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .wordmark {
     font-family: 'Audiowide', var(--display);
-    font-size: 1.15rem; letter-spacing: 0.02em;
+    font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em;
     color: var(--ivory); text-decoration: none; white-space: nowrap;
 }
+.product {
+    padding-left: 14px; border-left: 1px solid rgba(233,194,179,0.28);
+    font: 600 0.74rem var(--display); letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--saber); text-decoration: none; white-space: nowrap;
+}
+.product:hover { color: var(--ivory); }
 .wordmark .dot { color: var(--ember); }
 .wordmark:hover { color: var(--ivory); }
 .topnav { display: flex; gap: 22px; margin-left: auto; }
@@ -633,7 +641,9 @@ pre { margin: 1rem 0; }
 }
 @media (max-width: 760px) {
     .topbar-inner { padding: 0 16px; gap: 12px; }
-    .wordmark { font-size: 1rem; }
+    .wordmark { font-size: 1.05rem; }
+    .brand { gap: 10px; }
+    .product { padding-left: 10px; font-size: 0.64rem; letter-spacing: 0.08em; }
     .search-trigger span, .search-trigger kbd { display: none; }
     .hero { padding-left: 16px; padding-right: 16px; }
     .manual { padding: 0 16px; }

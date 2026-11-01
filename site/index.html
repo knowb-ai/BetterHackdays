@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BetterHackdays RFP Connector: hack.knowb.run</title>
+    <title>BetterHackdays RFP Connector: knowb.run</title>
     <meta name="description" content="The manual for the BetterHackdays RFP Connector: explore KnowB project RFPs, refine ideas, and send contributor requests that a human reviews. A request is not a grant.">
     <meta name="theme-color" content="#161211">
     <link rel="canonical" href="https://hack.knowb.run/">
     <meta property="og:title" content="BetterHackdays RFP Connector">
     <meta property="og:description" content="Pick a mission. Ask to board. A human says yes. The manual for exploring KnowB RFPs and sending contributor requests.">
     <meta property="og:url" content="https://hack.knowb.run/">
+    <meta property="og:site_name" content="knowb.run">
     <meta property="og:type" content="website">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,7 +25,10 @@
 
 <header class="topbar">
     <div class="topbar-inner">
-        <a class="wordmark" href="#top" aria-label="hack.knowb.run home">hack<span class="dot">.</span>knowb.run</a>
+        <div class="brand">
+            <a class="wordmark" href="https://knowb.run/" aria-label="knowb.run home">knowb<span class="dot">.</span>run</a>
+            <a class="product" href="#top">BetterHackdays</a>
+        </div>
         <nav class="topnav" aria-label="Primary">
             <a href="#quickstart">Quickstart</a>
             <a href="#requests">Requests</a>
@@ -505,7 +509,7 @@ curl -s "http://localhost:8000/rfps/search?q=inbox"</code></pre>
                 <p class="doc-no">09</p>
                 <h2 id="h-deploy">Deploying this site</h2>
                 <div class="rule"></div>
-                <p>This manual is a static page in <code>site/</code>, published by GitHub Pages from the BetterHackdays repository at <code>hack.knowb.run</code>. It has no build step beyond rendering its reference blocks, no tracking, and no third-party scripts.</p>
+                <p>This manual is a static page in <code>site/</code>, published by GitHub Pages from the BetterHackdays repository to the custom domain <code>hack.knowb.run</code>. It has no build step beyond rendering its reference blocks, no tracking, and no third-party scripts.</p>
 
                 <h3 id="deploy-pipeline">Pipeline</h3>
                 <ol class="pipeline">

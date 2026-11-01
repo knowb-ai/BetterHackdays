@@ -1,4 +1,4 @@
-// hack.knowb.run: progressive enhancement for the connector manual.
+// BetterHackdays RFP Connector manual: progressive enhancement.
 // Without this script the page is a complete, readable document; with it you
 // get the typed console, scrollspy index, search palette, copy buttons, tabs,
 // heading anchors, and expandable RFP rows.

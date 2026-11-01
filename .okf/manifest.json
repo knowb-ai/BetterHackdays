@@ -22,14 +22,14 @@
       "title": "BetterHackdays",
       "source_path": "README.md",
       "okf_path": ".okf/README.okf.json",
-      "sha256": "75eef828bb6af22d6290d18387146f326892b5c42bc71cbad4e26824a033b02a"
+      "sha256": "4328d6fde750bf4b2eb4aaa930bc985807890d24c88807ad3d3e9c9baaa770f3"
     },
     {
       "id": "betterhackdays.repo.agents",
       "title": "Agentic Development Guidelines",
       "source_path": "agents.md",
       "okf_path": ".okf/agents.okf.json",
-      "sha256": "61526614c08c9c2b42462c76b15ffd17f7e006d1c65bdadb7dbe27dff90c07c2"
+      "sha256": "268992e5a1b092a0a213db4da6b8a34aa6ec71a640457b42a1baeba0486bfea1"
     },
     {
       "id": "betterhackdays.docs.README",

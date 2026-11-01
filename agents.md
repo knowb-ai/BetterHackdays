@@ -20,6 +20,18 @@ This file is the shared working agreement for agents contributing to BetterHackd
 - Keep the summary short and specific.
 - Example: `feat: add hackathon prep docs scaffold`
 
+## GitHub identity
+
+- Commit and push as the person who asked for the work, with their own git
+  identity and GitHub login. Never commit or push as a bot.
+- Only opening a pull request goes through `knowb-kenobi[bot]`, the KnowB GitHub
+  App, with `as-kenobi.sh gh pr create`. It sets the invoking person as reviewer
+  and assignee.
+- Reviews, change requests, and comments the person asks for are posted as that
+  person, never as the bot.
+- Add a `Co-Authored-By` trailer for the model or agent that wrote the commit.
+- The bot never merges. The invoking person reviews and merges.
+
 ## Current working state
 
 The repo is currently centered on the BetterHackdays matchmaking backend, with a new docs scaffold for the broader hackathon-success product direction.

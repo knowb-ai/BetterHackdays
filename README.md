@@ -11,7 +11,7 @@ experience and the current operating loop. Development setup lives in
 [Development](./docs/development.md).
 
 New here to explore KnowB RFPs or ask to contribute? Start with the
-connector manual at [hack.knowb.run](https://hack.knowb.run). A contributor
+[RFP Connector manual](https://hack.knowb.run). A contributor
 request is reviewed by a person and never grants repository access on its own.
 
 ## The Hack Day Scenario
